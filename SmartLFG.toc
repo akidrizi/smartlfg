@@ -1,0 +1,14 @@
+## Interface: 120001
+## Title: SmartLFG
+## Notes: Double-click LFG to auto-sign with your saved role. Auto-accepts role checks when a friend queues the group. Warns when no role is configured for multi-role classes.
+## Author: Akis Idrizi
+## Version: 1.0.1
+## SavedVariables: SmartLFGDB
+
+src\Constants.lua
+src\Database.lua
+src\Util.lua
+src\RoleManager.lua
+src\FrameHook.lua
+src\Commands.lua
+src\Core.lua
