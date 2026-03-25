@@ -34,14 +34,8 @@ local RM = SmartLFG.RoleManager
 --- Dungeon Finder panel.  Prints a reminder and returns false otherwise.
 local function HasRoleSelected()
     if SmartLFG.HasLFDRoleSelected() then return true end
-
-    local C = SmartLFG.COLOR
-    SmartLFG.Print(
-        C.WARN .. "No role selected." .. C.RESET ..
-        " Open the Dungeon Finder (" ..
-        C.ROLE .. SmartLFG.GetDungeonFinderKey() .. C.RESET ..
-        ") and tick at least one role checkbox first."
-    )
+    local key = SmartLFG.COLOR.ROLE .. SmartLFG.GetDungeonFinderKey() .. SmartLFG.COLOR.RESET
+    SmartLFG.Warn(string.format(SmartLFG.L.NO_ROLE, key))
     return false
 end
 
@@ -59,20 +53,14 @@ function RM.SignUp()
     -- Guard: already queued?
     local mode = GetLFGMode(LE_LFG_CATEGORY_LFD)
     if mode then
-        SmartLFG.Print(
-            "Already in queue (state: " ..
-            SmartLFG.COLOR.ROLE .. tostring(mode) ..
-            SmartLFG.COLOR.RESET .. "). Not re-queuing."
-        )
+        local C = SmartLFG.COLOR
+        SmartLFG.Print(string.format(SmartLFG.L.ALREADY_QUEUED, C.ROLE .. tostring(mode) .. C.RESET))
         return
     end
 
     -- Roles are already set in the native UI — just commit the queue.
     LFGTeleport(false)
-
-    SmartLFG.Print(
-        "Signed up as " .. (SmartLFG.GetLFDRoleDisplay() or "?") .. "."
-    )
+    SmartLFG.Print(string.format(SmartLFG.L.SIGNED_UP, SmartLFG.GetLFDRoleDisplay() or "?"))
 end
 
 -- ---------------------------------------------------------------------------
@@ -97,22 +85,16 @@ function RM.ApplyToGroup()
     if signUpBtn then
         if signUpBtn:IsEnabled() then
             signUpBtn:Click()
-            SmartLFG.Print(
-                "Applying to group as " ..
-                (SmartLFG.GetLFDRoleDisplay() or "?") .. "."
-            )
+            SmartLFG.Print(string.format(SmartLFG.L.APPLYING, SmartLFG.GetLFDRoleDisplay() or "?"))
         else
-            SmartLFG.Print("Already applied — waiting for the group leader's response.")
+            SmartLFG.Print(SmartLFG.L.ALREADY_APPLIED)
         end
     elseif LFGListSearchPanel_SignUp and LFGListFrame and LFGListFrame.SearchPanel then
         -- Fallback: LFGListSearchPanel_SignUp is a method on the SearchPanel.
         LFGListSearchPanel_SignUp(LFGListFrame.SearchPanel)
-        SmartLFG.Print(
-            "Applying to group as " ..
-            (SmartLFG.GetLFDRoleDisplay() or "?") .. "."
-        )
+        SmartLFG.Print(string.format(SmartLFG.L.APPLYING, SmartLFG.GetLFDRoleDisplay() or "?"))
     else
-        SmartLFG.Warn("Could not find the premade group sign-up button.")
+        SmartLFG.Warn(SmartLFG.L.NO_SIGNUP_BTN)
     end
 end
 
@@ -138,10 +120,9 @@ function RM.AutoAcceptRoleCheck()
     if not (btn and btn:IsVisible()) then return end
     btn:Click()
 
-    SmartLFG.Print(
-        "Auto-accepted role check as " ..
-        (SmartLFG.GetLFDRoleDisplay() or "?") ..
-        " (leader: " .. SmartLFG.COLOR.OK .. tostring(leader) ..
-        SmartLFG.COLOR.RESET .. ")."
-    )
+    local C = SmartLFG.COLOR
+    SmartLFG.Print(string.format(SmartLFG.L.AUTO_ACCEPTED,
+        SmartLFG.GetLFDRoleDisplay() or "?",
+        C.OK .. tostring(leader) .. C.RESET
+    ))
 end

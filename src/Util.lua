@@ -59,7 +59,7 @@ function SmartLFG.GetDungeonFinderKey()
     if key and key ~= "" then
         return key
     end
-    return "Dungeon Finder key"  -- player has unbound it
+    return SmartLFG.L.KEY_FALLBACK
 end
 
 -- ---------------------------------------------------------------------------
@@ -75,10 +75,10 @@ end
 --- @return string|nil
 function SmartLFG.GetLFDRoleDisplay()
     local _, tank, healer, dps = GetLFGRoles()
-    local R, parts = SmartLFG.ROLE, {}
-    if tank   then parts[#parts + 1] = C.TANK   .. R.TANK   .. C.RESET end
-    if healer then parts[#parts + 1] = C.HEALER .. R.HEALER .. C.RESET end
-    if dps    then parts[#parts + 1] = C.DPS    .. "DPS"    .. C.RESET end
+    local L, parts = SmartLFG.L, {}
+    if tank   then parts[#parts + 1] = C.TANK   .. L.ROLE_TANK   .. C.RESET end
+    if healer then parts[#parts + 1] = C.HEALER .. L.ROLE_HEALER .. C.RESET end
+    if dps    then parts[#parts + 1] = C.DPS    .. L.ROLE_DPS    .. C.RESET end
     if #parts == 0 then return nil end
     return table.concat(parts, ", ")
 end
@@ -98,11 +98,11 @@ end
 --- @param role string  One of SmartLFG.ROLE.*
 --- @return string
 function SmartLFG.RoleDisplay(role)
-    local R = SmartLFG.ROLE
-    if role == R.TANK   then return C.TANK   .. "TANK"   .. C.RESET end
-    if role == R.HEALER then return C.HEALER .. "HEALER" .. C.RESET end
-    if role == R.DPS    then return C.DPS    .. "DPS"    .. C.RESET end
-    return C.WARN .. "UNKNOWN" .. C.RESET
+    local R, L = SmartLFG.ROLE, SmartLFG.L
+    if role == R.TANK   then return C.TANK   .. L.ROLE_TANK    .. C.RESET end
+    if role == R.HEALER then return C.HEALER .. L.ROLE_HEALER  .. C.RESET end
+    if role == R.DPS    then return C.DPS    .. L.ROLE_DPS     .. C.RESET end
+    return C.WARN .. L.ROLE_UNKNOWN .. C.RESET
 end
 
 -- ---------------------------------------------------------------------------

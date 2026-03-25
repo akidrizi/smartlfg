@@ -75,6 +75,24 @@ SmartLFG only calls Blizzard-provided addon APIs. It does not inject input, modi
 
 ---
 
+## 🌍 Multilingual Support
+
+SmartLFG automatically adapts all chat messages to your WoW client language. Supported locales:
+
+| Code | Language |
+|------|----------|
+| `enUS` | English (default / fallback) |
+| `deDE` | German |
+| `frFR` | French |
+| `esES` / `esMX` | Spanish |
+| `ruRU` | Russian |
+| `ptBR` | Portuguese (Brazil) |
+| `itIT` | Italian |
+
+All strings live in `src/Locale.lua`. To add a new locale, copy an existing table, translate the values, and add an `elseif` branch at the bottom of the file.
+
+---
+
 ## 📋 Compatibility
 
 | Version             | Status |

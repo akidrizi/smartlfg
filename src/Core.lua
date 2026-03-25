@@ -1,6 +1,6 @@
 -- src/Core.lua
 -- Entry point. Registers WoW events and wires up subsystems.
--- Load order: Constants → Database → Util → RoleManager → FrameHook → Commands → Core
+-- Load order: Constants → Locale → Database → Util → RoleManager → FrameHook → Commands → Core
 
 local addonName, SmartLFG = ...
 
@@ -14,7 +14,7 @@ frame:SetScript("OnEvent", function(self, event, ...)
         local loaded = ...
         if loaded == addonName then
             SmartLFG.DB.Init()
-            SmartLFG.Print("v" .. SmartLFG.GetAddonVersion() .. "  ·  /slfg help")
+            SmartLFG.Print(string.format(SmartLFG.L.WELCOME, SmartLFG.GetAddonVersion()))
         elseif loaded == "Blizzard_LFGList" then
             SmartLFG.FrameHook.HookLFGList()
         elseif loaded == "Blizzard_LookingForGroup" then

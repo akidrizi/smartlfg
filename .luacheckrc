@@ -59,6 +59,7 @@ globals = {
     "GetTime",
     "GetBuildInfo",
     "GetBindingKey",
+    "GetLocale",
     "C_AddOns",
 
     -- LFG frame globals
@@ -75,6 +76,8 @@ globals = {
 
 -- ── Per-file overrides ─────────────────────────────────────────────────────
 files = {
+    -- Locale strings can legitimately exceed the default limit.
+    ["src/Locale.lua"] = { max_line_length = 200 },
     ["src/Constants.lua"] = {
         -- Constants intentionally uses the addon table from vararg, which
         -- luacheck sees as an implicit global write. Suppress that warning.

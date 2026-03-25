@@ -2,55 +2,44 @@
 -- Registers and handles /slfg slash commands.
 
 local addonName, SmartLFG = ...
-local C = SmartLFG.COLOR
 
--- ---------------------------------------------------------------------------
--- Help text
--- ---------------------------------------------------------------------------
 local function PrintHelp()
-    SmartLFG.Print("=== SmartLFG ===")
-    SmartLFG.Print(C.ROLE .. "/slfg status"           .. C.RESET .. " — Current settings")
-    SmartLFG.Print(C.ROLE .. "/slfg enable"           .. C.RESET .. " — Enable SmartLFG")
-    SmartLFG.Print(C.ROLE .. "/slfg disable"          .. C.RESET .. " — Disable SmartLFG")
-    SmartLFG.Print(C.ROLE .. "/slfg friends <on|off>" .. C.RESET .. " — Toggle friend auto-accept")
-    SmartLFG.Print("Set your role in the Dungeon Finder (" ..
-        C.ROLE .. SmartLFG.GetDungeonFinderKey() .. C.RESET .. ").")
+    local L, C = SmartLFG.L, SmartLFG.COLOR
+    SmartLFG.Print(L.HELP_HEADER)
+    SmartLFG.Print(C.ROLE .. "/slfg status"           .. C.RESET .. " — " .. L.HELP_STATUS)
+    SmartLFG.Print(C.ROLE .. "/slfg enable"           .. C.RESET .. " — " .. L.HELP_ENABLE)
+    SmartLFG.Print(C.ROLE .. "/slfg disable"          .. C.RESET .. " — " .. L.HELP_DISABLE)
+    SmartLFG.Print(C.ROLE .. "/slfg friends <on|off>" .. C.RESET .. " — " .. L.HELP_FRIENDS)
+    SmartLFG.Print(string.format(L.HELP_ROLE_HINT, C.ROLE .. SmartLFG.GetDungeonFinderKey() .. C.RESET))
 end
 
--- ---------------------------------------------------------------------------
--- /slfg status
--- ---------------------------------------------------------------------------
 local function CmdStatus()
+    local L, C = SmartLFG.L, SmartLFG.COLOR
     local enabled     = SmartLFG.DB.Get("enabled")
     local autoFriends = SmartLFG.DB.Get("autoAcceptFriends")
-    local roleDisplay = SmartLFG.GetLFDRoleDisplay() or (C.WARN .. "None ticked" .. C.RESET)
-
-    SmartLFG.Print("=== SmartLFG Status ===")
-    SmartLFG.Print("Enabled: " .. (enabled     and C.OK .. "YES" or C.WARN .. "NO")  .. C.RESET)
-    SmartLFG.Print("Class: " .. SmartLFG.GetClassColoredName())
-    SmartLFG.Print("LFD role(s): " .. roleDisplay)
-    SmartLFG.Print("Friend auto-accept: " .. (autoFriends and C.OK .. "ON"  or C.WARN .. "OFF") .. C.RESET)
+    local roleDisplay = SmartLFG.GetLFDRoleDisplay() or (C.WARN .. L.STATUS_NO_ROLE .. C.RESET)
+    SmartLFG.Print(L.STATUS_HEADER)
+    SmartLFG.Print(L.STATUS_ENABLED  .. (enabled     and C.OK .. L.YES or C.WARN .. L.NO)  .. C.RESET)
+    SmartLFG.Print(L.STATUS_CLASS    .. SmartLFG.GetClassColoredName())
+    SmartLFG.Print(L.STATUS_ROLES    .. roleDisplay)
+    SmartLFG.Print(L.STATUS_FRIENDS  .. (autoFriends and C.OK .. L.ON  or C.WARN .. L.OFF) .. C.RESET)
 end
 
--- ---------------------------------------------------------------------------
--- /slfg friends
--- ---------------------------------------------------------------------------
 local function CmdFriends(arg)
+    local L, C = SmartLFG.L, SmartLFG.COLOR
     if arg == "on" or arg == "true" then
         SmartLFG.DB.Set("autoAcceptFriends", true)
-        SmartLFG.Print("Friend auto-accept: " .. C.OK .. "ON" .. C.RESET .. ".")
+        SmartLFG.Print(L.STATUS_FRIENDS .. C.OK .. L.ON .. C.RESET .. ".")
     elseif arg == "off" or arg == "false" then
         SmartLFG.DB.Set("autoAcceptFriends", false)
-        SmartLFG.Print("Friend auto-accept: " .. C.WARN .. "OFF" .. C.RESET .. ".")
+        SmartLFG.Print(L.STATUS_FRIENDS .. C.WARN .. L.OFF .. C.RESET .. ".")
     else
-        SmartLFG.Warn("Usage: /slfg friends on|off")
+        SmartLFG.Warn(L.FRIENDS_USAGE)
     end
 end
 
--- ---------------------------------------------------------------------------
--- Main dispatcher
--- ---------------------------------------------------------------------------
 local function Dispatch(msg)
+    local L, C = SmartLFG.L, SmartLFG.COLOR
     msg = msg:match("^%s*(.-)%s*$"):lower()
     local cmd, arg = msg:match("^(%S+)%s*(.*)")
     cmd = cmd or ""
@@ -59,17 +48,16 @@ local function Dispatch(msg)
     if     cmd == "" or cmd == "help" then PrintHelp()
     elseif cmd == "status"  then CmdStatus()
     elseif cmd == "enable"  then
-        SmartLFG.DB.Set("enabled", true);  SmartLFG.Print("SmartLFG " .. C.OK   .. "enabled"  .. C.RESET .. ".")
+        SmartLFG.DB.Set("enabled", true)
+        SmartLFG.Print(C.OK .. L.ADDON_ENABLED .. C.RESET)
     elseif cmd == "disable" then
-        SmartLFG.DB.Set("enabled", false); SmartLFG.Print("SmartLFG " .. C.WARN .. "disabled" .. C.RESET .. ".")
+        SmartLFG.DB.Set("enabled", false)
+        SmartLFG.Print(C.WARN .. L.ADDON_DISABLED .. C.RESET)
     elseif cmd == "friends" then CmdFriends(arg)
-    else   SmartLFG.Warn("Unknown command '" .. cmd .. "'. Type /slfg help.")
+    else   SmartLFG.Warn(string.format(L.CMD_UNKNOWN, cmd))
     end
 end
 
--- ---------------------------------------------------------------------------
--- Register slash commands
--- ---------------------------------------------------------------------------
 SLASH_SMARTLFG1 = "/slfg"
 SLASH_SMARTLFG2 = "/smartlfg"
 SlashCmdList["SMARTLFG"] = Dispatch
