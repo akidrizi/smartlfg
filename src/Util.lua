@@ -115,28 +115,25 @@ end
 --- @return boolean
 function SmartLFG.IsFriend(name)
     if not name or name == "" then return false end
-    local shortName = (name:match("^(.-)%-") or name):lower()
+
+    local function strip(n) return (n:match("^(.-)%-") or n):lower() end
+    local shortName = strip(name)
 
     -- BNet friends
-    local numBNet = BNGetNumFriends()
-    for i = 1, numBNet do
-        local numAccounts = C_BattleNet.GetFriendNumGameAccounts(i)
-        for j = 1, numAccounts do
+    for i = 1, BNGetNumFriends() do
+        for j = 1, C_BattleNet.GetFriendNumGameAccounts(i) do
             local info = C_BattleNet.GetFriendGameAccountInfo(i, j)
-            if info and info.characterName then
-                local cn = (info.characterName:match("^(.-)%-") or info.characterName):lower()
-                if cn == shortName then return true end
+            if info and info.characterName and strip(info.characterName) == shortName then
+                return true
             end
         end
     end
 
     -- In-game friends
-    local numFriends = C_FriendList.GetNumFriends()
-    for i = 1, numFriends do
+    for i = 1, C_FriendList.GetNumFriends() do
         local info = C_FriendList.GetFriendInfoByIndex(i)
-        if info and info.name then
-            local fn = (info.name:match("^(.-)%-") or info.name):lower()
-            if fn == shortName then return true end
+        if info and info.name and strip(info.name) == shortName then
+            return true
         end
     end
 

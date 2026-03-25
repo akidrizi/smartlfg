@@ -14,6 +14,7 @@ SmartLFG/                        ← repository root (= addon folder name)
 ├── .luacheckrc                  ← luacheck configuration
 ├── package.sh                   ← local build helper
 ├── README.md
+├── LICENSE.md
 ├── .github/
 │   └── workflows/
 │       ├── ci.yml               ← lint on push / PR

@@ -230,7 +230,7 @@ local L_ruRU = {
 -- ---------------------------------------------------------------------------
 local L_ptBR = {
     WELCOME             = "v%s  ·  /slfg help",
-    NO_ROLE             = "Nenhum papel selecionado — abra o Localizador de Masmorras (%s) e marque pelo menos um papel.",
+    NO_ROLE             = "Nenhum papel selecionado — abra o Localizador de Masmorras (%s) e marque um papel.",
     ALREADY_QUEUED      = "Já na fila (estado: %s). Não reentrando.",
     SIGNED_UP           = "Inscrito como %s.",
     APPLYING            = "Candidatando ao grupo como %s.",
@@ -316,8 +316,4 @@ elseif locale == "ptBR" then SmartLFG.L = L_ptBR
 elseif locale == "itIT" then SmartLFG.L = L_itIT
 else                         SmartLFG.L = L_enUS
 end
-
-
-
-
 

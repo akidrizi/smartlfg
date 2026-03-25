@@ -42,7 +42,7 @@ EXCLUDES=(
     'docs'
     'node_modules'
     'package.sh'
-    'README.md'
+    'LICENSE.md'
     '*.zip'
     '*.tar.gz'
 )
