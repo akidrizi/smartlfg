@@ -67,6 +67,10 @@ local L_enUS = {
 
     -- Fallback when the Group Finder key is unbound
     KEY_FALLBACK        = "Dungeon Finder key",
+
+    -- Options panel
+    OPTIONS_VERSION     = "Version: %s",
+    OPTIONS_HINT        = "Access options with `/slfg`",
 }
 
 -- ---------------------------------------------------------------------------
@@ -106,6 +110,8 @@ local L_deDE = {
     ON                  = "AN",
     OFF                 = "AUS",
     KEY_FALLBACK        = "Dungeon-Sucher-Taste",
+    OPTIONS_VERSION     = "Version: %s",
+    OPTIONS_HINT        = "Optionen mit `/slfg` aufrufen",
 }
 
 -- ---------------------------------------------------------------------------
@@ -145,6 +151,8 @@ local L_frFR = {
     ON                  = "ON",
     OFF                 = "OFF",
     KEY_FALLBACK        = "touche Chercheur de donjon",
+    OPTIONS_VERSION     = "Version : %s",
+    OPTIONS_HINT        = "Accédez aux options avec `/slfg`",
 }
 
 -- ---------------------------------------------------------------------------
@@ -184,6 +192,8 @@ local L_esES = {
     ON                  = "ON",
     OFF                 = "OFF",
     KEY_FALLBACK        = "tecla del Buscador de mazmorras",
+    OPTIONS_VERSION     = "Version: %s",
+    OPTIONS_HINT        = "Accede a las opciones con `/slfg`",
 }
 
 -- ---------------------------------------------------------------------------
@@ -223,6 +233,8 @@ local L_ruRU = {
     ON                  = "ВКЛ",
     OFF                 = "ВЫКЛ",
     KEY_FALLBACK        = "клавиша Поиска подземелий",
+    OPTIONS_VERSION     = "Версия: %s",
+    OPTIONS_HINT        = "Откройте опции через `/slfg`",
 }
 
 -- ---------------------------------------------------------------------------
@@ -262,6 +274,8 @@ local L_ptBR = {
     ON                  = "ON",
     OFF                 = "OFF",
     KEY_FALLBACK        = "tecla do Localizador de Masmorras",
+    OPTIONS_VERSION     = "Versão: %s",
+    OPTIONS_HINT        = "Acesse as opções com `/slfg`",
 }
 
 -- ---------------------------------------------------------------------------
@@ -301,6 +315,8 @@ local L_itIT = {
     ON                  = "ON",
     OFF                 = "OFF",
     KEY_FALLBACK        = "tasto del Cercatore di Dungeon",
+    OPTIONS_VERSION     = "Versione: %s",
+    OPTIONS_HINT        = "Accedi alle opzioni con `/slfg`",
 }
 
 -- ---------------------------------------------------------------------------

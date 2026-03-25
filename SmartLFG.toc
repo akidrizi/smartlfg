@@ -2,15 +2,24 @@
 ## Title: SmartLFG
 ## Notes: Double-click LFG to auto-sign with your saved role. Auto-accepts role checks when a friend queues the group. Warns when no role is configured for multi-role classes.
 ## Author: Akis Idrizi
-## Version: 1.1.0
-## IconTexture: Interface\\LFGFrame\\LFG-Eye
+## Version: 1.2.0
+## IconTexture: Interface\Icons\achievement_reputation_ogre
 ## SavedVariables: SmartLFGDB
+## Category: Dungeons & Raids
+## Category-deDE: Dungeons & Schlachtzüge
+## Category-esES: Mazmorras y bandas
+## Category-esMX: Calabozos y bandas
+## Category-frFR: Donjons et raids
+## Category-itIT: Spedizioni e incursioni
+## Category-koKR: 던전 및 공격대
+## Category-ptBR: Masmorras e Raides
+## Category-ruRU: Подземелья и рейды
 
-src\Constants.lua
-src\Locale.lua
-src\Database.lua
-src\Util.lua
-src\RoleManager.lua
-src\FrameHook.lua
 src\Commands.lua
+src\Constants.lua
 src\Core.lua
+src\Database.lua
+src\FrameHook.lua
+src\Locale.lua
+src\RoleManager.lua
+src\Util.lua

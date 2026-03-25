@@ -13,3 +13,6 @@ SmartLFG Changelog
 -----
 - Multilingual support.
 
+1.2.0
+-----
+- Add in-game options panel in Options -> Addons -> SmartLFG.
