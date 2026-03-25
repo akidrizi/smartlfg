@@ -1,0 +1,19 @@
+# pkgmeta.yaml for SmartLFG addon
+package-as: SmartLFG
+manual-changelog: CHANGELOG.txt
+
+# Files or folders to ignore in packaging
+ignore:
+  - .git/
+  - .github/
+  - .idea/
+  - docs/
+  - dist/
+  - .editorconfig
+  - .gitignore
+  - .luacheckrc
+  - package.sh
+  - LICENSE.md
+  - "*.zip"
+  - "*.tar.gz"
+
