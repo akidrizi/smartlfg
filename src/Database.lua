@@ -7,7 +7,7 @@ local addonName, SmartLFG = ...
 -- SavedVariables schema version — bump when adding new keys so existing
 -- installs get the new defaults merged in automatically.
 -- ---------------------------------------------------------------------------
-local SCHEMA_VERSION = 2
+local SCHEMA_VERSION = 3
 
 -- ---------------------------------------------------------------------------
 -- Default values applied on first load or after a schema upgrade.
@@ -16,6 +16,7 @@ local DEFAULTS = {
     schemaVersion     = SCHEMA_VERSION,
     enabled           = true,
     autoAcceptFriends = true,
+    tooltipHint       = true,
 }
 
 -- ---------------------------------------------------------------------------
@@ -38,6 +39,7 @@ function SmartLFG.DB.Init()
             end
         end
         -- v2: selectedRole removed — role is now read live from the LFD panel.
+        -- v3: tooltipHint added.
         SmartLFGDB.selectedRole = nil
         SmartLFGDB.schemaVersion = SCHEMA_VERSION
     end

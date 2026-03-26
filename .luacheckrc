@@ -55,6 +55,7 @@ globals = {
     -- UI / frame
     "CreateFrame",
     "UIParent",
+    "GameTooltip",
     "DEFAULT_CHAT_FRAME",
     "GetTime",
     "GetBuildInfo",

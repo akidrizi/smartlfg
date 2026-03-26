@@ -15,7 +15,7 @@
 # The workflow will:
 #   1. Validate the tag against the regex
 #   2. Verify the tag version matches ## Version: in SmartLFG.toc
-#   3. Package the addon into SmartLFG-<version>.zip
+#   3. Package the addon into v<version>.zip
 #   4. Create a GitHub Release (pre-release flag set for alpha/beta/rc)
 #   5. Upload the zip as a release asset
 # ============================================================
@@ -145,7 +145,7 @@ jobs:
         run: |
           VERSION="${{ needs.validate.outputs.version }}"
           STAGING="dist/SmartLFG"
-          ZIP_NAME="SmartLFG-${VERSION}.zip"
+          ZIP_NAME="v${VERSION}.zip"
           ZIP_PATH="dist/${ZIP_NAME}"
 
           echo "📦 Packaging SmartLFG v${VERSION} …"
@@ -160,8 +160,10 @@ jobs:
             --exclude='.editorconfig' \
             --exclude='.luacheckrc' \
             --exclude='dist/' \
+            --exclude='docs/' \
             --exclude='node_modules/' \
             --exclude='package.sh' \
+            --exclude='pkgmeta.yaml' \
             --exclude='*.zip' \
             --exclude='*.tar.gz' \
             . "$STAGING/"

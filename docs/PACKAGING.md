@@ -51,7 +51,7 @@ Triggers only on tags that match the semver regex (see below).
 
 ```
 Job 1: validate   →   regex check + version consistency with .toc
-Job 2: package    →   builds SmartLFG-<version>.zip
+Job 2: package    →   builds v<version>.zip
 Job 3: release    →   creates GitHub Release, attaches zip, auto-labels pre-releases
 ```
 
@@ -121,10 +121,10 @@ The `release.yml` workflow starts automatically. It will:
 
 1. Validate `v1.2.0` against the semver regex ✅
 2. Confirm that `## Version: 1.2.0` in `SmartLFG.toc` matches ✅
-3. Build `dist/SmartLFG-1.2.0.zip` ✅
+3. Build `dist/v1.2.0.zip` ✅
 4. Create a GitHub Release named **SmartLFG v1.2.0** with:
    - Auto-generated changelog (commits since the last tag)
-   - `SmartLFG-1.2.0.zip` attached as a downloadable asset
+   - `v1.2.0.zip` attached as a downloadable asset
    - Pre-release flag set automatically for `alpha`/`beta`/`rc` tags ✅
 
 ### Step 5 — Verify
@@ -132,7 +132,7 @@ The `release.yml` workflow starts automatically. It will:
 Go to **Releases** on your GitHub repository page. The new release should be visible with the zip attached. Download it and verify the folder structure inside:
 
 ```
-SmartLFG-1.2.0.zip
+v1.2.0.zip
 └── SmartLFG/
     ├── SmartLFG.toc
     └── src/
@@ -145,7 +145,7 @@ SmartLFG-1.2.0.zip
 ```bash
 chmod +x package.sh
 ./package.sh
-# → dist/SmartLFG-<version>.zip
+# → dist/v<version>.zip
 ```
 
 ---

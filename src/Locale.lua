@@ -3,7 +3,7 @@
 -- Falls back to enUS for any unsupported client language.
 -- Strings with %s placeholders are meant for string.format() in the caller.
 
-local addonName, SmartLFG = ...
+local _, SmartLFG = ...
 
 -- ---------------------------------------------------------------------------
 -- English (enUS / default)
@@ -39,6 +39,7 @@ local L_enUS = {
     HELP_ENABLE         = "Enable SmartLFG",
     HELP_DISABLE        = "Disable SmartLFG",
     HELP_FRIENDS        = "Toggle friend auto-accept",
+    HELP_TOOLTIP        = "Toggle Dungeon Finder tooltip hint",
     HELP_ROLE_HINT      = "Set your role in the Dungeon Finder (%s).",
 
     -- /slfg status
@@ -47,6 +48,7 @@ local L_enUS = {
     STATUS_CLASS        = "Class: ",
     STATUS_ROLES        = "LFD role(s): ",
     STATUS_FRIENDS      = "Friend auto-accept: ",
+    STATUS_TOOLTIP      = "Tooltip hint: ",
     STATUS_NO_ROLE      = "None ticked",
 
     -- /slfg enable|disable
@@ -71,6 +73,9 @@ local L_enUS = {
     -- Options panel
     OPTIONS_VERSION     = "Version: %s",
     OPTIONS_HINT        = "Access options with `/slfg`",
+
+    -- Tooltip hint (Dungeon Finder rows)
+    TOOLTIP_QUICK_SIGNUP = "Double-click to quickly sign up.",
 }
 
 -- ---------------------------------------------------------------------------
@@ -94,12 +99,14 @@ local L_deDE = {
     HELP_ENABLE         = "SmartLFG aktivieren",
     HELP_DISABLE        = "SmartLFG deaktivieren",
     HELP_FRIENDS        = "Freunde-Auto-Bestätigung umschalten",
+    HELP_TOOLTIP        = "Tooltip-Hinweis im Dungeon-Sucher umschalten",
     HELP_ROLE_HINT      = "Setze deine Rolle im Dungeon-Sucher (%s).",
     STATUS_HEADER       = "=== SmartLFG Status ===",
     STATUS_ENABLED      = "Aktiviert: ",
     STATUS_CLASS        = "Klasse: ",
     STATUS_ROLES        = "LFD-Rolle(n): ",
     STATUS_FRIENDS      = "Freunde-Auto-Bestätigung: ",
+    STATUS_TOOLTIP      = "Tooltip-Hinweis: ",
     STATUS_NO_ROLE      = "Keine ausgewählt",
     ADDON_ENABLED       = "SmartLFG aktiviert.",
     ADDON_DISABLED      = "SmartLFG deaktiviert.",
@@ -112,6 +119,7 @@ local L_deDE = {
     KEY_FALLBACK        = "Dungeon-Sucher-Taste",
     OPTIONS_VERSION     = "Version: %s",
     OPTIONS_HINT        = "Optionen mit `/slfg` aufrufen",
+    TOOLTIP_QUICK_SIGNUP = "Doppelklick fur schnelles Anmelden.",
 }
 
 -- ---------------------------------------------------------------------------
@@ -135,12 +143,14 @@ local L_frFR = {
     HELP_ENABLE         = "Activer SmartLFG",
     HELP_DISABLE        = "Désactiver SmartLFG",
     HELP_FRIENDS        = "Activer/désactiver l'acceptation automatique des amis",
+    HELP_TOOLTIP        = "Activer/desactiver l'indice d'infobulle du Chercheur de donjon",
     HELP_ROLE_HINT      = "Définis ton rôle dans le Chercheur de donjon (%s).",
     STATUS_HEADER       = "=== Statut SmartLFG ===",
     STATUS_ENABLED      = "Activé : ",
     STATUS_CLASS        = "Classe : ",
     STATUS_ROLES        = "Rôle(s) LFD : ",
     STATUS_FRIENDS      = "Auto-acceptation amis : ",
+    STATUS_TOOLTIP      = "Indice infobulle : ",
     STATUS_NO_ROLE      = "Aucun coché",
     ADDON_ENABLED       = "SmartLFG activé.",
     ADDON_DISABLED      = "SmartLFG désactivé.",
@@ -153,6 +163,7 @@ local L_frFR = {
     KEY_FALLBACK        = "touche Chercheur de donjon",
     OPTIONS_VERSION     = "Version : %s",
     OPTIONS_HINT        = "Accédez aux options avec `/slfg`",
+    TOOLTIP_QUICK_SIGNUP = "Double-cliquez pour vous inscrire rapidement.",
 }
 
 -- ---------------------------------------------------------------------------
@@ -176,12 +187,14 @@ local L_esES = {
     HELP_ENABLE         = "Activar SmartLFG",
     HELP_DISABLE        = "Desactivar SmartLFG",
     HELP_FRIENDS        = "Alternar aceptación automática de amigos",
+    HELP_TOOLTIP        = "Alternar pista del tooltip del Buscador de mazmorras",
     HELP_ROLE_HINT      = "Establece tu rol en el Buscador de mazmorras (%s).",
     STATUS_HEADER       = "=== Estado de SmartLFG ===",
     STATUS_ENABLED      = "Activado: ",
     STATUS_CLASS        = "Clase: ",
     STATUS_ROLES        = "Rol(es) LFD: ",
     STATUS_FRIENDS      = "Auto-aceptar amigos: ",
+    STATUS_TOOLTIP      = "Pista de tooltip: ",
     STATUS_NO_ROLE      = "Ninguno marcado",
     ADDON_ENABLED       = "SmartLFG activado.",
     ADDON_DISABLED      = "SmartLFG desactivado.",
@@ -194,6 +207,7 @@ local L_esES = {
     KEY_FALLBACK        = "tecla del Buscador de mazmorras",
     OPTIONS_VERSION     = "Version: %s",
     OPTIONS_HINT        = "Accede a las opciones con `/slfg`",
+    TOOLTIP_QUICK_SIGNUP = "Haz doble clic para apuntarte rapidamente.",
 }
 
 -- ---------------------------------------------------------------------------
@@ -217,12 +231,14 @@ local L_ruRU = {
     HELP_ENABLE         = "Включить SmartLFG",
     HELP_DISABLE        = "Отключить SmartLFG",
     HELP_FRIENDS        = "Авто-принятие приглашений от друзей",
+    HELP_TOOLTIP        = "Переключить подсказку в окне Поиска подземелий",
     HELP_ROLE_HINT      = "Установите роль в Поиске подземелий (%s).",
     STATUS_HEADER       = "=== Статус SmartLFG ===",
     STATUS_ENABLED      = "Включён: ",
     STATUS_CLASS        = "Класс: ",
     STATUS_ROLES        = "Роль(и) LFD: ",
     STATUS_FRIENDS      = "Авто-принятие друзей: ",
+    STATUS_TOOLTIP      = "Подсказка: ",
     STATUS_NO_ROLE      = "Ничего не отмечено",
     ADDON_ENABLED       = "SmartLFG включён.",
     ADDON_DISABLED      = "SmartLFG отключён.",
@@ -235,6 +251,7 @@ local L_ruRU = {
     KEY_FALLBACK        = "клавиша Поиска подземелий",
     OPTIONS_VERSION     = "Версия: %s",
     OPTIONS_HINT        = "Откройте опции через `/slfg`",
+    TOOLTIP_QUICK_SIGNUP = "Двойной щелчок для быстрой записи.",
 }
 
 -- ---------------------------------------------------------------------------
@@ -258,12 +275,14 @@ local L_ptBR = {
     HELP_ENABLE         = "Ativar SmartLFG",
     HELP_DISABLE        = "Desativar SmartLFG",
     HELP_FRIENDS        = "Alternar aceitação automática de amigos",
+    HELP_TOOLTIP        = "Alternar dica de tooltip do Localizador de Masmorras",
     HELP_ROLE_HINT      = "Defina seu papel no Localizador de Masmorras (%s).",
     STATUS_HEADER       = "=== Status SmartLFG ===",
     STATUS_ENABLED      = "Ativado: ",
     STATUS_CLASS        = "Classe: ",
     STATUS_ROLES        = "Papel(éis) LFD: ",
     STATUS_FRIENDS      = "Aceitação automática de amigos: ",
+    STATUS_TOOLTIP      = "Dica de tooltip: ",
     STATUS_NO_ROLE      = "Nenhum marcado",
     ADDON_ENABLED       = "SmartLFG ativado.",
     ADDON_DISABLED      = "SmartLFG desativado.",
@@ -276,6 +295,7 @@ local L_ptBR = {
     KEY_FALLBACK        = "tecla do Localizador de Masmorras",
     OPTIONS_VERSION     = "Versão: %s",
     OPTIONS_HINT        = "Acesse as opções com `/slfg`",
+    TOOLTIP_QUICK_SIGNUP = "Clique duplo para se inscrever rapidamente.",
 }
 
 -- ---------------------------------------------------------------------------
@@ -299,12 +319,14 @@ local L_itIT = {
     HELP_ENABLE         = "Abilita SmartLFG",
     HELP_DISABLE        = "Disabilita SmartLFG",
     HELP_FRIENDS        = "Attiva/disattiva accettazione automatica amici",
+    HELP_TOOLTIP        = "Attiva/disattiva suggerimento tooltip del Cercatore di Dungeon",
     HELP_ROLE_HINT      = "Imposta il tuo ruolo nel Cercatore di Dungeon (%s).",
     STATUS_HEADER       = "=== Stato SmartLFG ===",
     STATUS_ENABLED      = "Abilitato: ",
     STATUS_CLASS        = "Classe: ",
     STATUS_ROLES        = "Ruolo/i LFD: ",
     STATUS_FRIENDS      = "Auto-accettazione amici: ",
+    STATUS_TOOLTIP      = "Suggerimento tooltip: ",
     STATUS_NO_ROLE      = "Nessuno selezionato",
     ADDON_ENABLED       = "SmartLFG abilitato.",
     ADDON_DISABLED      = "SmartLFG disabilitato.",
@@ -317,6 +339,7 @@ local L_itIT = {
     KEY_FALLBACK        = "tasto del Cercatore di Dungeon",
     OPTIONS_VERSION     = "Versione: %s",
     OPTIONS_HINT        = "Accedi alle opzioni con `/slfg`",
+    TOOLTIP_QUICK_SIGNUP = "Doppio clic per iscriverti rapidamente.",
 }
 
 -- ---------------------------------------------------------------------------

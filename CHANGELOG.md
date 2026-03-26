@@ -16,3 +16,7 @@ SmartLFG Changelog
 1.2.0
 -----
 - Add in-game options panel in Options -> Addons -> SmartLFG.
+
+1.3.0
+-----
+- Tooltip hint in Dungeon Finder.

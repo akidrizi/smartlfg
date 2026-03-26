@@ -9,7 +9,7 @@
 --   Row frames are also composites, so MakeOnClick deduplicates fires within
 --   50ms as the same physical click.
 
-local addonName, SmartLFG = ...
+local _, SmartLFG = ...
 
 SmartLFG.FrameHook = {}
 local FH = SmartLFG.FrameHook
@@ -21,10 +21,146 @@ local SAME_CLICK_WINDOW = 0.05   -- 50 ms guard against propagated duplicate fir
 local hookedFrames    = {}
 local onShowHooked    = {}
 local scrollBoxHooked = {}
+local tooltipHooked   = {}
+local tooltipResetHooked = false
+local TOOLTIP_OWNER_MAX_DEPTH = 6
+
+--- Returns true when `owner` is `frame` or one of its parents (bounded walk).
+--- @param owner table|nil
+--- @param frame table|nil
+--- @return boolean
+local function IsOwnedByFrame(owner, frame)
+    local current = owner
+    for _ = 0, TOOLTIP_OWNER_MAX_DEPTH do
+        if current == frame then return true end
+        if not (current and current.GetParent) then break end
+        current = current:GetParent()
+    end
+    return false
+end
+
+--- Attempts to read a Premade result ID from a frame or its element data.
+--- @param frame table|nil
+--- @return number|nil
+local function GetPremadeResultID(frame)
+    if not frame then return nil end
+    if frame.resultID then return frame.resultID end
+    if frame.GetElementData then
+        local data = frame:GetElementData()
+        if data then
+            return data.resultID or data.searchResultID
+        end
+    end
+    return nil
+end
+
+--- Walks up a frame chain and returns the first Premade result ID found.
+--- @param frame table|nil
+--- @return number|nil
+local function GetPremadeResultIDFromChain(frame)
+    local current = frame
+    for _ = 0, TOOLTIP_OWNER_MAX_DEPTH do
+        local resultID = GetPremadeResultID(current)
+        if resultID then return resultID end
+        if not (current and current.GetParent) then break end
+        current = current:GetParent()
+    end
+    return nil
+end
+
+--- Returns whether a Premade entry is currently sign-up eligible.
+--- Prefers SearchResultInfo when a result ID is known; otherwise falls back
+--- to the panel Sign Up button enabled state.
+--- @param resultID number|nil
+--- @return boolean
+local function IsPremadeSignUpAvailable(resultID)
+    if resultID and C_LFGList and C_LFGList.GetSearchResultInfo then
+        local info = C_LFGList.GetSearchResultInfo(resultID)
+        return info and not info.isDelisted and not info.delisted
+    end
+
+    -- Fallback: if resultID is not readable on this client/frame variant,
+    -- use the current panel Sign Up enablement as an availability signal.
+    local panel = LFGListFrame and LFGListFrame.SearchPanel
+    local signUpBtn = panel and panel.SignUpButton
+    return signUpBtn and signUpBtn.IsEnabled and signUpBtn:IsEnabled()
+end
+
+--- Shared tooltip visibility gate for LFD and Premade row hints.
+--- @param frame table|nil
+--- @param mode string "LFD"|"PREMADE"
+--- @param resultID number|nil
+--- @return boolean
+local function CanShowTooltipHint(frame, mode, resultID)
+    if not SmartLFG.DB.Get("enabled")
+        or not SmartLFG.DB.Get("tooltipHint")
+        or not SmartLFG.HasLFDRoleSelected()
+    then
+        return false
+    end
+
+    if mode == "LFD" and GetLFGMode(LE_LFG_CATEGORY_LFD) then
+        return false
+    end
+
+    if mode == "PREMADE" then
+        if not IsPremadeSignUpAvailable(resultID) then
+            return false
+        end
+    end
+
+    if frame and frame.IsEnabled and not frame:IsEnabled() then return false end
+    return true
+end
+
+--- Appends the SmartLFG tooltip hint to the currently visible row tooltip.
+--- @param frame table
+--- @param mode string "LFD"|"PREMADE"
+local function AddTooltipHint(frame, mode)
+    local tooltip = GameTooltip
+    if not (tooltip and tooltip:IsShown()) then return end
+
+    local owner = tooltip.GetOwner and tooltip:GetOwner() or nil
+    if not owner then return end
+
+    if not IsOwnedByFrame(owner, frame) then return end
+
+    local resultID
+    if mode == "PREMADE" then
+        resultID = GetPremadeResultIDFromChain(frame) or GetPremadeResultIDFromChain(owner)
+    end
+
+    if not CanShowTooltipHint(frame, mode, resultID) then return end
+
+    if tooltip.__SmartLFGHintOwner == owner then return end
+    tooltip.__SmartLFGHintOwner = owner
+
+    tooltip:AddLine(" ")
+    tooltip:AddLine(SmartLFG.L.TOOLTIP_QUICK_SIGNUP, 0, 1, 1, true)
+    tooltip:Show()
+end
+
+--- Hooks a row frame to inject the tooltip hint on hover.
+--- @param frame table|nil
+--- @param mode string "LFD"|"PREMADE"
+local function HookTooltip(frame, mode)
+    if not frame or tooltipHooked[frame] then return end
+    frame:HookScript("OnEnter", function(self)
+        AddTooltipHint(self, mode)
+    end)
+    tooltipHooked[frame] = true
+
+    if not tooltipResetHooked and GameTooltip and GameTooltip.HookScript then
+        GameTooltip:HookScript("OnHide", function(tt)
+            tt.__SmartLFGHintOwner = nil
+        end)
+        tooltipResetHooked = true
+    end
+end
 
 --- Returns a click handler that calls signUpFn on confirmed double-click.
 local function MakeOnClick(signUpFn)
-    return function(self, button)
+    return function(_, button)
         if button ~= "LeftButton" then return end
         local now = GetTime()
         -- Discard propagated duplicate fires from the same physical click.
@@ -45,19 +181,31 @@ end
 local OnClickLFD     = MakeOnClick(function() SmartLFG.RoleManager.SignUp()       end)
 local OnClickPremade = MakeOnClick(function() SmartLFG.RoleManager.ApplyToGroup() end)
 
+--- Hooks Dungeon Finder row interactions (double-click + tooltip hint).
+--- @param frame table|nil
 local function HookFrameLFD(frame)
-    if not frame or hookedFrames[frame] then return end
-    frame:HookScript("OnMouseDown", OnClickLFD)
-    hookedFrames[frame] = true
+    if not frame then return end
+    if not hookedFrames[frame] then
+        frame:HookScript("OnMouseDown", OnClickLFD)
+        hookedFrames[frame] = true
+    end
+    HookTooltip(frame, "LFD")
 end
 
+--- Hooks Premade row interactions (double-click + tooltip hint).
+--- @param frame table|nil
 local function HookFramePremade(frame)
-    if not frame or hookedFrames[frame] then return end
-    frame:HookScript("OnMouseDown", OnClickPremade)
-    hookedFrames[frame] = true
+    if not frame then return end
+    if not hookedFrames[frame] then
+        frame:HookScript("OnMouseDown", OnClickPremade)
+        hookedFrames[frame] = true
+    end
+    HookTooltip(frame, "PREMADE")
 end
 
 -- Legacy fallback for old-style ScrollFrame with a .buttons table.
+--- Hooks legacy Premade ScrollFrame buttons when present.
+--- @param scrollFrame table|nil
 local function HookScrollButtons(scrollFrame)
     if not scrollFrame or not scrollFrame.buttons then return end
     for _, btn in ipairs(scrollFrame.buttons) do HookFramePremade(btn) end
@@ -65,6 +213,8 @@ end
 
 -- Hooks visible ScrollBox row frames and re-hooks on layout changes.
 -- Returns true when found — caller must NOT also hook parent frames (dual-fire).
+--- @param scrollBox table|nil
+--- @return boolean
 local function HookScrollBox(scrollBox)
     if not scrollBox then return false end
     if scrollBox.ForEachFrame then

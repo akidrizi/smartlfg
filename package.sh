@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # package.sh — builds a WoW-ready release zip for SmartLFG
 # Usage:  ./package.sh
-# Output: dist/SmartLFG-<version>.zip
+# Output: dist/v<version>.zip
 set -euo pipefail
 
 # ---------------------------------------------------------------------------
@@ -35,6 +35,7 @@ mkdir -p "$STAGING"
 # Files/dirs to exclude from the release
 EXCLUDES=(
     '.git'
+    '.github'
     '.gitignore'
     '.editorconfig'
     '.luacheckrc'
@@ -42,6 +43,7 @@ EXCLUDES=(
     'docs'
     'node_modules'
     'package.sh'
+    'pkgmeta.yaml'
     'LICENSE.md'
     '*.zip'
     '*.tar.gz'
@@ -58,7 +60,7 @@ rsync -a "${RSYNC_EXCLUDES[@]}" . "$STAGING/"
 # ---------------------------------------------------------------------------
 # Zip (top-level folder inside the archive must be "SmartLFG")
 # ---------------------------------------------------------------------------
-ZIPFILE="SmartLFG-${VERSION}.zip"
+ZIPFILE="v${VERSION}.zip"
 
 cd "$DIST"
 zip -r "$ZIPFILE" SmartLFG/

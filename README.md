@@ -43,7 +43,8 @@ When your group leader (who must be on your friends list) queues for a dungeon, 
 | `/slfg status` | Show current settings and active role |
 | `/slfg enable` | Enable SmartLFG automation |
 | `/slfg disable` | Disable automation (WoW behaves normally) |
-| `/slfg friends <on\|off>` | Toggle auto-accept for friend-queued groups |
+| `/slfg friends` | Toggle auto-accept for friend-queued groups |
+| `/slfg tooltip` | Toggle the Dungeon Finder tooltip quick sign-up hint |
 | `/slfg help` | Print all commands to chat |
 
 You can also use `/smartlfg` as an alternative prefix.
