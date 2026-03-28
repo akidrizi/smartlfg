@@ -76,6 +76,10 @@ local L_enUS = {
 
     -- Tooltip hint (Dungeon Finder rows)
     TOOLTIP_QUICK_SIGNUP = "Double-click to quickly sign up.",
+
+    -- Join notification
+    JOINED_GROUP_FOR    = "Joined group for %s.",
+    GROUP_TYPE_UNKNOWN  = "this activity",
 }
 
 -- ---------------------------------------------------------------------------
@@ -120,6 +124,8 @@ local L_deDE = {
     OPTIONS_VERSION     = "Version: %s",
     OPTIONS_HINT        = "Optionen mit `/slfg` aufrufen",
     TOOLTIP_QUICK_SIGNUP = "Doppelklick fur schnelles Anmelden.",
+    JOINED_GROUP_FOR    = "Gruppe beigetreten fur %s.",
+    GROUP_TYPE_UNKNOWN  = "diese Aktivitat",
 }
 
 -- ---------------------------------------------------------------------------
@@ -164,6 +170,8 @@ local L_frFR = {
     OPTIONS_VERSION     = "Version : %s",
     OPTIONS_HINT        = "Accédez aux options avec `/slfg`",
     TOOLTIP_QUICK_SIGNUP = "Double-cliquez pour vous inscrire rapidement.",
+    JOINED_GROUP_FOR    = "Vous avez rejoint un groupe pour %s.",
+    GROUP_TYPE_UNKNOWN  = "cette activité",
 }
 
 -- ---------------------------------------------------------------------------
@@ -208,6 +216,8 @@ local L_esES = {
     OPTIONS_VERSION     = "Version: %s",
     OPTIONS_HINT        = "Accede a las opciones con `/slfg`",
     TOOLTIP_QUICK_SIGNUP = "Haz doble clic para apuntarte rapidamente.",
+    JOINED_GROUP_FOR    = "Te uniste a un grupo para %s.",
+    GROUP_TYPE_UNKNOWN  = "esta actividad",
 }
 
 -- ---------------------------------------------------------------------------
@@ -252,6 +262,8 @@ local L_ruRU = {
     OPTIONS_VERSION     = "Версия: %s",
     OPTIONS_HINT        = "Откройте опции через `/slfg`",
     TOOLTIP_QUICK_SIGNUP = "Двойной щелчок для быстрой записи.",
+    JOINED_GROUP_FOR    = "Вы присоединились к группе для %s.",
+    GROUP_TYPE_UNKNOWN  = "этого занятия",
 }
 
 -- ---------------------------------------------------------------------------
@@ -296,6 +308,8 @@ local L_ptBR = {
     OPTIONS_VERSION     = "Versão: %s",
     OPTIONS_HINT        = "Acesse as opções com `/slfg`",
     TOOLTIP_QUICK_SIGNUP = "Clique duplo para se inscrever rapidamente.",
+    JOINED_GROUP_FOR    = "Entrou no grupo para %s.",
+    GROUP_TYPE_UNKNOWN  = "esta atividade",
 }
 
 -- ---------------------------------------------------------------------------
@@ -340,6 +354,8 @@ local L_itIT = {
     OPTIONS_VERSION     = "Versione: %s",
     OPTIONS_HINT        = "Accedi alle opzioni con `/slfg`",
     TOOLTIP_QUICK_SIGNUP = "Doppio clic per iscriverti rapidamente.",
+    JOINED_GROUP_FOR    = "Entrato nel gruppo per %s.",
+    GROUP_TYPE_UNKNOWN  = "questa attività",
 }
 
 -- ---------------------------------------------------------------------------

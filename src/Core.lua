@@ -41,6 +41,8 @@ end
 frame:RegisterEvent("ADDON_LOADED")
 frame:RegisterEvent("LFG_ROLE_CHECK_SHOW")
 frame:RegisterEvent("LFG_LIST_SEARCH_RESULTS_RECEIVED")
+frame:RegisterEvent("LFG_LIST_APPLICATION_STATUS_UPDATED")
+frame:RegisterEvent("GROUP_ROSTER_UPDATE")
 
 frame:SetScript("OnEvent", function(_, event, ...)
     if event == "ADDON_LOADED" then
@@ -62,5 +64,14 @@ frame:SetScript("OnEvent", function(_, event, ...)
     elseif event == "LFG_ROLE_CHECK_SHOW" then
         -- Fires when a group leader queues for LFD and all members get a role-check popup.
         SmartLFG.RoleManager.AutoAcceptRoleCheck()
+
+    elseif event == "LFG_LIST_APPLICATION_STATUS_UPDATED" then
+        -- Tracks listing invitation/acceptance state from WoW, independent of click source.
+        local resultID, newStatus, oldStatus = ...
+        SmartLFG.RoleManager.OnLFGListApplicationStatusUpdated(resultID, newStatus, oldStatus)
+
+    elseif event == "GROUP_ROSTER_UPDATE" then
+        -- Fires on party/raid roster changes; used to confirm actual listing-source joins.
+        SmartLFG.RoleManager.MaybePrintJoinedListingGroup()
     end
 end)
