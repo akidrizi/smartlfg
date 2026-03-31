@@ -42,6 +42,7 @@ frame:RegisterEvent("ADDON_LOADED")
 frame:RegisterEvent("LFG_ROLE_CHECK_SHOW")
 frame:RegisterEvent("LFG_LIST_SEARCH_RESULTS_RECEIVED")
 frame:RegisterEvent("LFG_LIST_APPLICATION_STATUS_UPDATED")
+frame:RegisterEvent("LFG_LIST_ACTIVE_ENTRY_UPDATE")
 frame:RegisterEvent("GROUP_ROSTER_UPDATE")
 
 frame:SetScript("OnEvent", function(_, event, ...)
@@ -69,6 +70,13 @@ frame:SetScript("OnEvent", function(_, event, ...)
         -- Tracks listing invitation/acceptance state from WoW, independent of click source.
         local resultID, newStatus, oldStatus = ...
         SmartLFG.RoleManager.OnLFGListApplicationStatusUpdated(resultID, newStatus, oldStatus)
+
+    elseif event == "LFG_LIST_ACTIVE_ENTRY_UPDATE" then
+        -- Fires for both the group leader and all members whenever the listing state
+        -- changes (group fills, member joins, listing ends). This is the most reliable
+        -- point to capture the activity name because C_LFGList.GetActiveEntryInfo()
+        -- is fully populated at this moment for everyone involved.
+        SmartLFG.RoleManager.OnActiveEntryUpdate()
 
     elseif event == "GROUP_ROSTER_UPDATE" then
         -- Fires on party/raid roster changes; used to confirm actual listing-source joins.

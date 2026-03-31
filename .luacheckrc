@@ -28,6 +28,8 @@ globals = {
     "UnitIsGroupLeader",
     "GetNumGroupMembers",
     "IsInRaid",
+    "IsInGroup",
+    "LE_PARTY_CATEGORY_HOME",
 
     -- LFD / queue API
     "SetLFGRoles",

@@ -20,3 +20,7 @@ SmartLFG Changelog
 1.3.0
 -----
 - Tooltip hint in Dungeon Finder.
+
+1.4.0
+-----
+- Announce joined group in chat.

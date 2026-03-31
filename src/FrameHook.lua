@@ -10,6 +10,7 @@
 --   50ms as the same physical click.
 
 local _, SmartLFG = ...
+local GameTooltip = _G.GameTooltip
 
 SmartLFG.FrameHook = {}
 local FH = SmartLFG.FrameHook
@@ -95,6 +96,7 @@ local function CanShowTooltipHint(frame, mode, resultID)
     if not SmartLFG.DB.Get("enabled")
         or not SmartLFG.DB.Get("tooltipHint")
         or not SmartLFG.HasLFDRoleSelected()
+        or not SmartLFG.IsPlayerSoloOrLeader()
     then
         return false
     end
@@ -158,10 +160,48 @@ local function HookTooltip(frame, mode)
     end
 end
 
---- Returns a click handler that calls signUpFn on confirmed double-click.
+--- Reads the activity name shown on a Premade Groups result row frame.
+--- Blizzard's row template stores the dropdown-selected activity (e.g. "Maisara
+--- Caverns") in a FontString named ActivityName. This is read at click time so
+--- the value is always available even when C_LFGList activity APIs have changed.
+--- Walks the frame chain up to TOOLTIP_OWNER_MAX_DEPTH levels to handle composite
+--- frames where the FontString may live on a parent rather than the leaf frame.
+--- @param frame table|nil
+--- @return string|nil
+local function GetActivityNameFromFrame(frame)
+    local current = frame
+    for _ = 0, TOOLTIP_OWNER_MAX_DEPTH do
+        if not current then break end
+
+        -- DataProvider element data (WoW 10.x+) may expose activityName directly.
+        if current.GetElementData then
+            local data = current:GetElementData()
+            if data and type(data.activityName) == "string" and data.activityName ~= "" then
+                return data.activityName
+            end
+        end
+
+        -- Named FontString children present in Blizzard's row templates.
+        for _, field in ipairs({ "ActivityName", "activityName", "CategoryName", "Activity" }) do
+            local fs = current[field]
+            if fs and type(fs.GetText) == "function" then
+                local text = fs:GetText()
+                if text and text ~= "" then return text end
+            end
+        end
+
+        if not current.GetParent then break end
+        current = current:GetParent()
+    end
+    return nil
+end
+
+--- Returns a click handler that calls signUpFn(frame) on confirmed double-click.
+--- Silently does nothing when the player is in a group but is not the leader.
 local function MakeOnClick(signUpFn)
-    return function(_, button)
+    return function(self, button)
         if button ~= "LeftButton" then return end
+        if not SmartLFG.IsPlayerSoloOrLeader() then return end
         local now = GetTime()
         -- Discard propagated duplicate fires from the same physical click.
         if (now - lastFireTime) < SAME_CLICK_WINDOW then
@@ -171,15 +211,25 @@ local function MakeOnClick(signUpFn)
         lastFireTime = now
         if (now - lastClickTime) <= SmartLFG.DOUBLE_CLICK_THRESHOLD then
             lastClickTime = 0
-            signUpFn()
+            signUpFn(self)
         else
             lastClickTime = now
         end
     end
 end
 
-local OnClickLFD     = MakeOnClick(function() SmartLFG.RoleManager.SignUp()       end)
-local OnClickPremade = MakeOnClick(function() SmartLFG.RoleManager.ApplyToGroup() end)
+local OnClickLFD = MakeOnClick(function(_)
+    SmartLFG.RoleManager.SignUp()
+end)
+
+--- Premade click: capture result ID and activity name from the row frame so
+--- RoleManager can show the correct dungeon/raid/PvP name in the join message,
+--- independent of which C_LFGList activity APIs exist in the current WoW version.
+local OnClickPremade = MakeOnClick(function(frame)
+    local resultID = GetPremadeResultIDFromChain(frame)
+    local actName  = GetActivityNameFromFrame(frame)
+    SmartLFG.RoleManager.ApplyToGroup(resultID, actName)
+end)
 
 --- Hooks Dungeon Finder row interactions (double-click + tooltip hint).
 --- @param frame table|nil
@@ -193,6 +243,8 @@ local function HookFrameLFD(frame)
 end
 
 --- Hooks Premade row interactions (double-click + tooltip hint).
+--- Also refreshes the activity name cache on every call so recycled frames
+--- always update the cache before any sign-up event fires.
 --- @param frame table|nil
 local function HookFramePremade(frame)
     if not frame then return end
@@ -201,6 +253,15 @@ local function HookFramePremade(frame)
         hookedFrames[frame] = true
     end
     HookTooltip(frame, "PREMADE")
+
+    -- Refresh the cache outside the hookedFrames guard: ScrollBox recycles frame
+    -- objects, so the same frame pointer may display a different result after a
+    -- layout change. Run this every time so the cache is always up to date.
+    local resultID = GetPremadeResultID(frame)
+    local actName  = GetActivityNameFromFrame(frame)
+    if resultID and actName and actName ~= "" then
+        SmartLFG.RoleManager.CacheActivityName(resultID, actName)
+    end
 end
 
 -- Legacy fallback for old-style ScrollFrame with a .buttons table.

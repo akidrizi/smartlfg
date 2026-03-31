@@ -140,9 +140,14 @@ function SmartLFG.IsFriend(name)
     return false
 end
 
--- ---------------------------------------------------------------------------
--- Group leader lookup
--- ---------------------------------------------------------------------------
+--- Returns true when the player is alone or is the leader of their group.
+--- Used to gate sign-up actions and tooltip hints — non-leaders should not
+--- sign up or queue on behalf of a group they do not lead.
+--- @return boolean
+function SmartLFG.IsPlayerSoloOrLeader()
+    if not IsInGroup(LE_PARTY_CATEGORY_HOME) then return true end
+    return UnitIsGroupLeader("player")
+end
 
 --- Returns the name of the current group leader, or nil if not in a group.
 --- @return string|nil

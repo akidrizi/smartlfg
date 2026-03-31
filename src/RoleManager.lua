@@ -28,7 +28,23 @@ local RM = SmartLFG.RoleManager
 
 local LISTING_JOIN_TTL = 180
 local pendingListingJoin
-local wasInHomeGroup = false
+local pendingActivityLabel  -- activity name captured from the row frame at click time
+
+--- Maps resultID -> activity name read directly from visible row frames.
+--- Populated by FrameHook on every ScrollBox layout so it is always current
+--- before any sign-up event fires, regardless of who triggered the invite.
+local activityNameCache = {}
+
+--- Called from FrameHook whenever a Premade result row is displayed.
+--- Caches the activity label so GetPremadeActivityLabel can find it for any
+--- sign-up path: SmartLFG double-click, manual button click, or leader invite.
+--- @param resultID number
+--- @param name string
+function RM.CacheActivityName(resultID, name)
+    if resultID and name and name ~= "" then
+        activityNameCache[resultID] = name
+    end
+end
 
 local APPLICATION_STATUS_BY_VALUE = {}
 for _, key in ipairs({
@@ -88,29 +104,73 @@ local function HasRoleSelected()
     return false
 end
 
---- Returns a readable Premade activity label for the given result.
---- @param resultID number|nil
+--- Resolves an activity name from an activityID using the available C_LFGList APIs.
+--- Handles both the table-return variant (WoW 10.x+) and the legacy plain-string
+--- first-return-value variant present in older WoW versions.
+--- @param activityID number
 --- @return string|nil
-local function GetPremadeActivityLabel(resultID)
-    if not (resultID and C_LFGList and C_LFGList.GetSearchResultInfo) then return nil end
+local function ResolveActivityName(activityID)
+    if not activityID or activityID == 0 then return nil end
 
-    local info = C_LFGList.GetSearchResultInfo(resultID)
-    if not info then return nil end
-
-    if info.activityID and C_LFGList.GetActivityInfoTable then
-        local activityInfo = C_LFGList.GetActivityInfoTable(info.activityID)
-        if activityInfo then
-            if activityInfo.fullName and activityInfo.fullName ~= "" then return activityInfo.fullName end
-            if activityInfo.shortName and activityInfo.shortName ~= "" then return activityInfo.shortName end
-            if activityInfo.groupFinderActivityGroupName and activityInfo.groupFinderActivityGroupName ~= "" then
-                return activityInfo.groupFinderActivityGroupName
-            end
+    local function tryAPI(fn)
+        if not fn then return nil end
+        local act = fn(activityID)
+        if type(act) == "table" then
+            return act.activityName
+                or act.fullName
+                or act.shortName
+                or act.groupFinderActivityGroupName
+        elseif type(act) == "string" and act ~= "" then
+            return act
         end
     end
 
+    return tryAPI(C_LFGList and C_LFGList.GetActivityInfoTable)
+        or tryAPI(C_LFGList and C_LFGList.GetActivityInfo)
+end
+
+--- Returns a readable Premade activity label for the given result.
+---
+--- Priority:
+---   1. activityNameCache[resultID] — populated from the row frame's displayed
+---      text by FrameHook on every ScrollBox layout. This is the most reliable
+---      source because it reflects what the player sees and works for all sign-up
+---      paths: SmartLFG double-click, manual button click, and leader invite.
+---   2. info.activityName   — newer WoW exposes this directly on the search result.
+---   3. GetActivityInfoTable / GetActivityInfo → table or plain-string variants.
+---   4. info.name           — the player-typed listing title (last resort).
+---
+--- @param resultID number|nil
+--- @return string|nil
+local function GetPremadeActivityLabel(resultID)
+    if not resultID then return nil end
+
+    -- 1. Frame-text cache (most reliable — independent of C_LFGList API shape).
+    if activityNameCache[resultID] then
+        return activityNameCache[resultID]
+    end
+
+    if not (C_LFGList and C_LFGList.GetSearchResultInfo) then return nil end
+    local info = C_LFGList.GetSearchResultInfo(resultID)
+    if not info then return nil end
+
+    -- 2. Some WoW versions embed activityName directly on the search result.
+    if info.activityName and info.activityName ~= "" then
+        return info.activityName
+    end
+
+    -- 3. Resolve via activityID (the dropdown selection).
+    --    Guard activityID == 0, which signals "no specific activity".
+    if info.activityID and info.activityID ~= 0 then
+        local label = ResolveActivityName(info.activityID)
+        if label and label ~= "" then return label end
+    end
+
+    -- 4. Last resort: the player-typed listing title.
     if info.name and info.name ~= "" then return info.name end
     return nil
 end
+
 
 --- Tries to read the currently selected Premade result ID from the SearchPanel.
 --- @return number|nil
@@ -159,11 +219,20 @@ end
 ---   1. Click SearchPanel.SignUpButton -> LFGListApplicationDialog opens.
 ---   2. FrameHook's OnShow hook on LFGListApplicationDialog auto-clicks
 ---      ApplicationDialog.SignUpButton to confirm.
-function RM.ApplyToGroup(resultID)
+---
+--- activityNameHint is captured from the row frame's displayed text at click
+--- time by FrameHook (frame.ActivityName FontString). It is the most reliable
+--- source because it reflects what the player sees regardless of WoW API changes.
+function RM.ApplyToGroup(resultID, activityNameHint)
     if not SmartLFG.DB.Get("enabled") then return end
     if not HasRoleSelected() then return end
 
     resultID = resultID or GetSelectedPremadeResultID()
+
+    -- Store the activity label now, while the UI context is fresh.
+    -- The frame-captured hint is preferred; API lookup is the fallback.
+    pendingActivityLabel = (activityNameHint and activityNameHint ~= "" and activityNameHint)
+                        or GetPremadeActivityLabel(resultID)
 
     local signUpBtn = LFGListFrame
         and LFGListFrame.SearchPanel
@@ -214,6 +283,41 @@ function RM.AutoAcceptRoleCheck()
     ))
 end
 
+-- ---------------------------------------------------------------------------
+-- OnActiveEntryUpdate  - active listing state change
+-- ---------------------------------------------------------------------------
+
+--- Called when LFG_LIST_ACTIVE_ENTRY_UPDATE fires.
+---
+--- This event fires for everyone in the group (leader AND members) whenever the
+--- active listing state changes — including the moment the group is formed or a
+--- member joins. At that point C_LFGList.GetActiveEntryInfo() holds the full
+--- entry data, making it the most reliable place to capture the activity name
+--- regardless of whether the player ever opened the search results panel.
+---
+--- For the leader  : fires when the listing fills or the group leaves.
+--- For members     : fires when they join the group via the listing — the
+---                   WoW dialog is suppressed for members but the event still
+---                   arrives, so we can read the entry info silently.
+function RM.OnActiveEntryUpdate()
+    if not SmartLFG.DB.Get("enabled") then return end
+    if not (C_LFGList and C_LFGList.GetActiveEntryInfo) then return end
+
+    local entry = C_LFGList.GetActiveEntryInfo()
+    if not entry then return end
+
+    -- Try activityName directly on the entry first (WoW 12.x may expose it here),
+    -- then fall back to resolving from activityID via the activity info APIs.
+    local activityName = (type(entry.activityName) == "string" and entry.activityName ~= "" and entry.activityName)
+                      or (entry.activityID and ResolveActivityName(entry.activityID))
+
+    if activityName and activityName ~= "" then
+        -- pendingActivityLabel is consumed by OnLFGListApplicationStatusUpdated
+        -- or directly by MaybePrintJoinedListingGroup.
+        pendingActivityLabel = activityName
+    end
+end
+
 --- Tracks listing application status changes reported by WoW.
 --- This is action-agnostic: manual clicks and SmartLFG clicks both flow here.
 --- @param resultID number|nil
@@ -249,27 +353,31 @@ function RM.OnLFGListApplicationStatusUpdated(resultID, ...)
         or newStatus ~= nil
     then
         pendingListingJoin = {
-            resultID = resultID,
-            activity = GetPremadeActivityLabel(resultID),
+            resultID  = resultID,
+            activity  = pendingActivityLabel or GetPremadeActivityLabel(resultID),
             expiresAt = GetTime() + LISTING_JOIN_TTL,
         }
+        pendingActivityLabel = nil  -- consumed
     end
 end
 
 --- Prints a join message only when the player enters a group via a listing source.
 --- Called from GROUP_ROSTER_UPDATE.
+---
+--- pendingListingJoin is the sole guard against duplicate prints — it is cleared
+--- immediately after printing, so repeated GROUP_ROSTER_UPDATE fires (which WoW
+--- sends for every roster change while grouped) will find it nil and return early.
+---
+--- wasInHomeGroup was previously used to detect solo→grouped transitions, but it
+--- blocked the message when the player was already in a group (e.g. the party
+--- leader signs up the whole group for a Premade listing). It is no longer needed.
 function RM.MaybePrintJoinedListingGroup()
-    local inHomeGroup = IsInGroup(LE_PARTY_CATEGORY_HOME) or IsInRaid(LE_PARTY_CATEGORY_HOME)
-    if not inHomeGroup then
-        wasInHomeGroup = false
-        return
-    end
-
-    if wasInHomeGroup then return end
-    wasInHomeGroup = true
-
     if not SmartLFG.DB.Get("enabled") then return end
     if not pendingListingJoin then return end
+
+    -- Wait until the player is actually in a home group before printing.
+    local inHomeGroup = IsInGroup(LE_PARTY_CATEGORY_HOME) or IsInRaid(LE_PARTY_CATEGORY_HOME)
+    if not inHomeGroup then return end
 
     if pendingListingJoin.expiresAt <= GetTime() then
         pendingListingJoin = nil

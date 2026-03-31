@@ -2,7 +2,7 @@
 ## Title: SmartLFG
 ## Notes: Double-click LFG to auto-sign with your saved role. Auto-accepts role checks when a friend queues the group. Warns when no role is configured for multi-role classes.
 ## Author: Akis Idrizi
-## Version: 1.3.0
+## Version: 1.4.0
 ## IconTexture: Interface\Icons\achievement_reputation_ogre
 ## SavedVariables: SmartLFGDB
 ## Category: Dungeons & Raids
