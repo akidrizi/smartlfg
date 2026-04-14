@@ -1,6 +1,6 @@
 # SmartLFG — Quick Apply LFG Sign-Ups & Auto-Accept Friend Queues
 
-**SmartLFG** is a lightweight World of Warcraft addon that speeds up dungeon and group sign-ups. Double-click any listing in LFG -> Premade Groups browser to instantly apply or let the addon auto-accept role checks when a friend queues the group.
+**SmartLFG** is a lightweight World of Warcraft addon that speeds up dungeon and group sign-ups. Double-click any listing in the Dungeon Finder or Premade Groups browser to instantly apply, see an inline tooltip hint when a group is available, get notified when you join, or let the addon auto-accept role checks when a friend queues the group.
 
 > **Compatible with WoW Midnight (12.x) · No dependencies · Zero background activity**
 
@@ -9,25 +9,42 @@
 ## ✨ Features
 
 ### ⚡ Double-Click Sign-Up
-Double-click any entry in the **Dungeon Finder** or **Premade Groups** browser (dungeons, raids, mythics, delves, quests — anything) and SmartLFG signs you up immediately using whatever role you already have ticked in the native WoW panel.
+Double-click any entry in the **Dungeon Finder** or **Premade Groups** browser — dungeons, raids, mythics, delves, quests, or anything else — and SmartLFG signs you up immediately using whatever role you already have ticked in the native WoW panel.
+
+Only works when you are **solo or the group leader**. Non-leader group members are silently skipped, preventing accidental sign-ups.
+
+### 🔍 Tooltip Hint
+When hovering over a sign-up-eligible listing, a subtle hint is appended to the existing row tooltip:
+
+> *Double-click to quickly sign up.*
+
+The hint appears only when sign-up is actually available: your role is ticked, you are solo or the leader, and the listing is not already closed or delisted. Toggle it with `/slfg tooltip`.
+
+### 📢 Join Notification
+When you (or your group leader) joins a group that originated from a Premade listing, SmartLFG prints a confirmation in chat:
+
+> **[SmartLFG]** Joined group for Maisara Caverns.
+
+The activity name is read from the listing's dropdown selection (dungeon, delve, raid, PvP activity, etc.) — not from the player-typed title. Works regardless of who triggered the invite.
 
 ### 👥 Friend Group Auto-Accept
-When a **friend queues your group** for a dungeon, SmartLFG automatically accepts the role-check popup on your behalf. Works with both BNet friends and in-game friends.
+When a **friend queues your group** for a dungeon, SmartLFG automatically accepts the role-check popup on your behalf. Works with both BNet friends and in-game friends. Toggle it with `/slfg friends`.
 
 ### 🔒 Non-Invasive by Design
-SmartLFG reads your role directly from the **native WoW Dungeon Finder checkboxes** — it never stores or overrides your role preference. If you haven't ticked any role, the addon prints a reminder and does nothing. Disable it at any time with `/slfg disable`.
+SmartLFG reads your role directly from the **native WoW Dungeon Finder checkboxes** — it never stores or overrides your role preference. If no role is ticked, the addon prints a reminder and does nothing. Disable it at any time with `/slfg off`.
 
 ---
 
 ## 🎮 How It Works
 
 ### Setting Your Role
-Open the Dungeon Finder (press `I` by default) and tick the role checkboxes at the top of the panel — **Tank**, **Healer**, **DPS**, or any combination your class supports. WoW already enforces which roles each class can play, so no extra configuration is needed.
+Open the Dungeon Finder (press `I` by default) and tick the role checkboxes at the top — **Tank**, **Healer**, **DPS**, or any combination your class supports. WoW already enforces which roles each class can play, so no extra configuration is needed.
 
 SmartLFG reads these checkboxes live every time you sign up. Change your role anytime simply by changing your selection in the panel.
 
 ### Signing Up
-- **Premade Groups:** Double-click any listing → application submitted automatically.
+- **Dungeon Finder:** Double-click any dungeon row to join the queue instantly.
+- **Premade Groups:** Double-click any listing → application submitted and the confirmation dialog auto-confirmed.
 
 If no role is ticked, SmartLFG prints a reminder in chat and leaves the normal WoW flow untouched.
 
@@ -41,10 +58,10 @@ When your group leader (who must be on your friends list) queues for a dungeon, 
 | Command | What it does |
 |---|---|
 | `/slfg status` | Show current settings and active role |
-| `/slfg enable` | Enable SmartLFG automation |
-| `/slfg disable` | Disable automation (WoW behaves normally) |
+| `/slfg on` | Enable SmartLFG automation |
+| `/slfg off` | Disable automation (WoW behaves normally) |
 | `/slfg friends` | Toggle auto-accept for friend-queued groups |
-| `/slfg tooltip` | Toggle the Dungeon Finder tooltip quick sign-up hint |
+| `/slfg tooltip` | Toggle the tooltip quick sign-up hint |
 | `/slfg help` | Print all commands to chat |
 
 You can also use `/smartlfg` as an alternative prefix.
@@ -68,8 +85,11 @@ SmartLFG prints a chat message telling you to open the Dungeon Finder and tick a
 **Can I queue as multiple roles at once (e.g. Tank + Healer)?**
 Yes. SmartLFG reads whatever combination of roles you have ticked. If you tick Tank and Healer, it signs you up for both.
 
+**Does it work if I am not the group leader?**
+Double-click sign-up and the tooltip hint are silently disabled for non-leader group members — only the leader can sign the group up. The friend auto-accept and join notification still work for all members.
+
 **Can I turn it off temporarily?**
-Yes: `/slfg disable`. This bypasses every hook and puts WoW back to its default behaviour until you run `/slfg enable`.
+Yes: `/slfg off`. This suppresses every feature until you run `/slfg on`.
 
 **Does it break any Blizzard ToS?**
 SmartLFG only calls Blizzard-provided addon APIs. It does not inject input, modify protected frames, or bypass role checks. It is equivalent to a player clicking the buttons themselves.
@@ -105,7 +125,7 @@ All strings live in `src/Locale.lua`. To add a new locale, copy an existing tabl
 
 ## 🐛 Reporting Issues
 
-Found a bug? Please open an issue on [Github](https://github.com/akidrizi/smartlfg/issues) and include:
+Found a bug? Please open an issue on [GitHub](https://github.com/akidrizi/smartlfg/issues) and include:
 
 - Your WoW version (`/run print(GetBuildInfo())`)
 - Your class and which role(s) were ticked

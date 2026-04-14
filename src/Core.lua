@@ -60,7 +60,15 @@ frame:SetScript("OnEvent", function(_, event, ...)
 
     elseif event == "LFG_LIST_SEARCH_RESULTS_RECEIVED" then
         -- Results are now visible in the ScrollBox — hook any new row frames.
+        -- This runs regardless of enabled state so hooks are in place when the
+        -- player later enables the addon without reloading.
         SmartLFG.FrameHook.HookLFGList()
+
+    elseif not SmartLFG.DB.Get("enabled") then
+        -- Central enabled gate: all feature events below this line are suppressed
+        -- when the addon is disabled. MakeOnClick carries the equivalent gate for
+        -- all click-driven paths. Frame-script OnShow hooks have their own checks.
+        return
 
     elseif event == "LFG_ROLE_CHECK_SHOW" then
         -- Fires when a group leader queues for LFD and all members get a role-check popup.

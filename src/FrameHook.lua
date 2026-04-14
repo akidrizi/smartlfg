@@ -17,28 +17,15 @@ local FH = SmartLFG.FrameHook
 
 local lastClickTime     = 0
 local lastFireTime      = 0
+local lastClickMode     = nil          -- tracks which panel (LFD|PREMADE) owns the pending first click
 local SAME_CLICK_WINDOW = 0.05   -- 50 ms guard against propagated duplicate fires
 
-local hookedFrames    = {}
-local onShowHooked    = {}
-local scrollBoxHooked = {}
-local tooltipHooked   = {}
-local tooltipResetHooked = false
+local hookedFrames      = {}
+local onShowHooked      = {}
+local scrollBoxHooked   = {}
+local tooltipHooked     = {}
 local TOOLTIP_OWNER_MAX_DEPTH = 6
 
---- Returns true when `owner` is `frame` or one of its parents (bounded walk).
---- @param owner table|nil
---- @param frame table|nil
---- @return boolean
-local function IsOwnedByFrame(owner, frame)
-    local current = owner
-    for _ = 0, TOOLTIP_OWNER_MAX_DEPTH do
-        if current == frame then return true end
-        if not (current and current.GetParent) then break end
-        current = current:GetParent()
-    end
-    return false
-end
 
 --- Attempts to read a Premade result ID from a frame or its element data.
 --- @param frame table|nil
@@ -115,49 +102,23 @@ local function CanShowTooltipHint(frame, mode, resultID)
     return true
 end
 
---- Appends the SmartLFG tooltip hint to the currently visible row tooltip.
---- @param frame table
---- @param mode string "LFD"|"PREMADE"
-local function AddTooltipHint(frame, mode)
-    local tooltip = GameTooltip
-    if not (tooltip and tooltip:IsShown()) then return end
-
-    local owner = tooltip.GetOwner and tooltip:GetOwner() or nil
-    if not owner then return end
-
-    if not IsOwnedByFrame(owner, frame) then return end
-
-    local resultID
-    if mode == "PREMADE" then
-        resultID = GetPremadeResultIDFromChain(frame) or GetPremadeResultIDFromChain(owner)
-    end
-
-    if not CanShowTooltipHint(frame, mode, resultID) then return end
-
-    if tooltip.__SmartLFGHintOwner == owner then return end
-    tooltip.__SmartLFGHintOwner = owner
-
-    tooltip:AddLine(" ")
-    tooltip:AddLine(SmartLFG.L.TOOLTIP_QUICK_SIGNUP, 0, 1, 1, true)
-    tooltip:Show()
-end
-
---- Hooks a row frame to inject the tooltip hint on hover.
+--- Hooks `frame`'s OnEnter to append the sign-up hint at the bottom of its
+--- tooltip. Runs after the frame's own OnEnter (and all tooltip addons that
+--- hook OnEnter before us), so our line is always the last one. Calls Show()
+--- once to resize the tooltip background to fit the new line.
 --- @param frame table|nil
 --- @param mode string "LFD"|"PREMADE"
 local function HookTooltip(frame, mode)
     if not frame or tooltipHooked[frame] then return end
-    frame:HookScript("OnEnter", function(self)
-        AddTooltipHint(self, mode)
-    end)
     tooltipHooked[frame] = true
 
-    if not tooltipResetHooked and GameTooltip and GameTooltip.HookScript then
-        GameTooltip:HookScript("OnHide", function(tt)
-            tt.__SmartLFGHintOwner = nil
-        end)
-        tooltipResetHooked = true
-    end
+    frame:HookScript("OnEnter", function(self)
+        local resultID = (mode == "PREMADE") and GetPremadeResultIDFromChain(self) or nil
+        if not CanShowTooltipHint(self, mode, resultID) then return end
+        if GameTooltip:GetOwner() ~= self then return end
+        GameTooltip:AddLine(SmartLFG.L.TOOLTIP_QUICK_SIGNUP, 0, 1, 1, true)
+        GameTooltip:Show()
+    end)
 end
 
 --- Reads the activity name shown on a Premade Groups result row frame.
@@ -182,7 +143,10 @@ local function GetActivityNameFromFrame(frame)
         end
 
         -- Named FontString children present in Blizzard's row templates.
-        for _, field in ipairs({ "ActivityName", "activityName", "CategoryName", "Activity" }) do
+        -- Only read ActivityName/activityName — these hold the dropdown-selected
+        -- specific activity (e.g. "Maisara Caverns"). CategoryName and Activity
+        -- hold the category string ("Dungeons", "Raids") which is not useful here.
+        for _, field in ipairs({ "ActivityName", "activityName" }) do
             local fs = current[field]
             if fs and type(fs.GetText) == "function" then
                 local text = fs:GetText()
@@ -197,10 +161,13 @@ local function GetActivityNameFromFrame(frame)
 end
 
 --- Returns a click handler that calls signUpFn(frame) on confirmed double-click.
---- Silently does nothing when the player is in a group but is not the leader.
-local function MakeOnClick(signUpFn)
+--- Silently does nothing when the addon is disabled or the player cannot lead a sign-up.
+--- `mode` ("LFD"|"PREMADE") is used to isolate click counters across the two panels so
+--- that a click in one panel never contributes to a double-click detected in the other.
+local function MakeOnClick(signUpFn, mode)
     return function(self, button)
         if button ~= "LeftButton" then return end
+        if not SmartLFG.DB.Get("enabled") then return end
         if not SmartLFG.IsPlayerSoloOrLeader() then return end
         local now = GetTime()
         -- Discard propagated duplicate fires from the same physical click.
@@ -209,8 +176,12 @@ local function MakeOnClick(signUpFn)
             return
         end
         lastFireTime = now
+        -- Reset the pending first-click if the player switched panels.
+        if mode ~= lastClickMode then lastClickTime = 0 end
+        lastClickMode = mode
         if (now - lastClickTime) <= SmartLFG.DOUBLE_CLICK_THRESHOLD then
             lastClickTime = 0
+            lastClickMode = nil
             signUpFn(self)
         else
             lastClickTime = now
@@ -220,7 +191,7 @@ end
 
 local OnClickLFD = MakeOnClick(function(_)
     SmartLFG.RoleManager.SignUp()
-end)
+end, "LFD")
 
 --- Premade click: capture result ID and activity name from the row frame so
 --- RoleManager can show the correct dungeon/raid/PvP name in the join message,
@@ -229,7 +200,7 @@ local OnClickPremade = MakeOnClick(function(frame)
     local resultID = GetPremadeResultIDFromChain(frame)
     local actName  = GetActivityNameFromFrame(frame)
     SmartLFG.RoleManager.ApplyToGroup(resultID, actName)
-end)
+end, "PREMADE")
 
 --- Hooks Dungeon Finder row interactions (double-click + tooltip hint).
 --- @param frame table|nil
@@ -291,14 +262,29 @@ local function HookScrollBox(scrollBox)
 end
 
 --- Hook the Dungeon Finder. Called when Blizzard_LookingForGroup loads.
+--- Only hooks LFGParentFrame as a fallback when no individual row buttons are found.
+--- Hooking both the parent and its children causes dual-fire: OnMouseDown propagates
+--- up the frame tree, so a single click on a child would fire two handlers.
 function FH.HookLFD()
     local frame = LFGParentFrame
     if not frame then return false end
-    HookFrameLFD(frame)
+
+    local hookedAny = false
     for i = 1, 30 do
         local btn = _G["LFGDungeonListButton" .. i]
-        if btn then HookFrameLFD(btn) end
+        if btn then
+            HookFrameLFD(btn)
+            hookedAny = true
+        end
     end
+
+    -- Parent-frame fallback: only hook when no individual buttons were found
+    -- (e.g. a future WoW version renames them). This avoids dual-fire and prevents
+    -- double-clicking the frame background from unexpectedly triggering sign-up.
+    if not hookedAny then
+        HookFrameLFD(frame)
+    end
+
     if not onShowHooked[frame] then
         frame:HookScript("OnShow", FH.HookLFD)
         onShowHooked[frame] = true
@@ -312,10 +298,28 @@ function FH.HookLFGList()
     if not frame then return false end
 
     -- Auto-confirm the application dialog when it opens after Sign Up is clicked.
+    -- Guard: this hook is frame-script-driven and cannot be reached via Core.lua's
+    -- event gate or MakeOnClick, so it needs its own enabled + solo/leader checks.
     local appDialog = LFGListApplicationDialog
     if appDialog and not onShowHooked[appDialog] then
         appDialog:HookScript("OnShow", function()
+            -- Read the activity name directly from the dialog UI. Blizzard renders
+            -- the dropdown-selected activity (e.g. "Maisara Caverns") in the
+            -- ActivityName FontString for both the sign-up confirmation and the
+            -- invite-received states. This fires for all players — solo, leader,
+            -- and non-leader members — making it the most reliable capture point.
+            local actName = appDialog.ActivityName
+                and type(appDialog.ActivityName.GetText) == "function"
+                and appDialog.ActivityName:GetText()
+            if actName and actName ~= "" then
+                SmartLFG.RoleManager.SetPendingActivityLabel(actName)
+            end
+
+            -- Auto-click Sign Up only in the sign-up confirmation state.
+            -- In the invite-received state SignUpButton is absent or disabled,
+            -- so this block is naturally skipped for non-leader members.
             if not SmartLFG.DB.Get("enabled") then return end
+            if not SmartLFG.IsPlayerSoloOrLeader() then return end
             local btn = appDialog.SignUpButton
             if btn and btn:IsEnabled() then btn:Click() end
         end)
@@ -326,11 +330,14 @@ function FH.HookLFGList()
     if panel then
         local hookedViaScrollBox = HookScrollBox(panel.ScrollBox)
         if not hookedViaScrollBox then
-            -- No ScrollBox API — hook parent frames as last resort.
+            -- No ScrollBox API — fall back to parent frames and legacy button list.
+            -- HookScrollButtons is intentionally inside this block: running it when
+            -- ScrollBox is already hooked would double-hook any frame that appears
+            -- in both panel.ScrollBox and panel.ScrollFrame.buttons.
             HookFramePremade(frame)
             HookFramePremade(panel)
+            HookScrollButtons(panel.ScrollFrame)
         end
-        HookScrollButtons(panel.ScrollFrame)
     else
         HookFramePremade(frame)
     end

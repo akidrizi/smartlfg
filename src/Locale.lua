@@ -51,12 +51,10 @@ local L_enUS = {
     STATUS_TOOLTIP      = "Tooltip hint: ",
     STATUS_NO_ROLE      = "None ticked",
 
-    -- /slfg enable|disable
+    -- /slfg on|off
     ADDON_ENABLED       = "SmartLFG enabled.",
     ADDON_DISABLED      = "SmartLFG disabled.",
 
-    -- /slfg friends
-    FRIENDS_USAGE       = "Usage: /slfg friends on|off",
 
     -- Unknown command
     CMD_UNKNOWN         = "Unknown command '%s'. Type /slfg help.",
@@ -100,8 +98,8 @@ local L_deDE = {
     ROLE_UNKNOWN        = "Unbekannt",
     HELP_HEADER         = "=== SmartLFG ===",
     HELP_STATUS         = "Aktuelle Einstellungen",
-    HELP_ENABLE         = "SmartLFG aktivieren",
-    HELP_DISABLE        = "SmartLFG deaktivieren",
+    HELP_ENABLE         = "SmartLFG einschalten",
+    HELP_DISABLE        = "SmartLFG ausschalten",
     HELP_FRIENDS        = "Freunde-Auto-Bestätigung umschalten",
     HELP_TOOLTIP        = "Tooltip-Hinweis im Dungeon-Sucher umschalten",
     HELP_ROLE_HINT      = "Setze deine Rolle im Dungeon-Sucher (%s).",
@@ -114,7 +112,6 @@ local L_deDE = {
     STATUS_NO_ROLE      = "Keine ausgewählt",
     ADDON_ENABLED       = "SmartLFG aktiviert.",
     ADDON_DISABLED      = "SmartLFG deaktiviert.",
-    FRIENDS_USAGE       = "Verwendung: /slfg friends on|off",
     CMD_UNKNOWN         = "Unbekannter Befehl '%s'. Tippe /slfg help.",
     YES                 = "JA",
     NO                  = "NEIN",
@@ -123,9 +120,9 @@ local L_deDE = {
     KEY_FALLBACK        = "Dungeon-Sucher-Taste",
     OPTIONS_VERSION     = "Version: %s",
     OPTIONS_HINT        = "Optionen mit `/slfg` aufrufen",
-    TOOLTIP_QUICK_SIGNUP = "Doppelklick fur schnelles Anmelden.",
-    JOINED_GROUP_FOR    = "Gruppe beigetreten fur %s.",
-    GROUP_TYPE_UNKNOWN  = "diese Aktivitat",
+    TOOLTIP_QUICK_SIGNUP = "Doppelklick für schnelles Anmelden.",
+    JOINED_GROUP_FOR    = "Gruppe beigetreten für %s.",
+    GROUP_TYPE_UNKNOWN  = "diese Aktivität",
 }
 
 -- ---------------------------------------------------------------------------
@@ -149,7 +146,7 @@ local L_frFR = {
     HELP_ENABLE         = "Activer SmartLFG",
     HELP_DISABLE        = "Désactiver SmartLFG",
     HELP_FRIENDS        = "Activer/désactiver l'acceptation automatique des amis",
-    HELP_TOOLTIP        = "Activer/desactiver l'indice d'infobulle du Chercheur de donjon",
+    HELP_TOOLTIP        = "Activer/désactiver l'indice d'infobulle du Chercheur de donjon",
     HELP_ROLE_HINT      = "Définis ton rôle dans le Chercheur de donjon (%s).",
     STATUS_HEADER       = "=== Statut SmartLFG ===",
     STATUS_ENABLED      = "Activé : ",
@@ -160,7 +157,6 @@ local L_frFR = {
     STATUS_NO_ROLE      = "Aucun coché",
     ADDON_ENABLED       = "SmartLFG activé.",
     ADDON_DISABLED      = "SmartLFG désactivé.",
-    FRIENDS_USAGE       = "Utilisation : /slfg friends on|off",
     CMD_UNKNOWN         = "Commande inconnue '%s'. Tape /slfg help.",
     YES                 = "OUI",
     NO                  = "NON",
@@ -206,16 +202,15 @@ local L_esES = {
     STATUS_NO_ROLE      = "Ninguno marcado",
     ADDON_ENABLED       = "SmartLFG activado.",
     ADDON_DISABLED      = "SmartLFG desactivado.",
-    FRIENDS_USAGE       = "Uso: /slfg friends on|off",
     CMD_UNKNOWN         = "Comando desconocido '%s'. Escribe /slfg help.",
     YES                 = "SÍ",
     NO                  = "NO",
     ON                  = "ON",
     OFF                 = "OFF",
     KEY_FALLBACK        = "tecla del Buscador de mazmorras",
-    OPTIONS_VERSION     = "Version: %s",
+    OPTIONS_VERSION     = "Versión: %s",
     OPTIONS_HINT        = "Accede a las opciones con `/slfg`",
-    TOOLTIP_QUICK_SIGNUP = "Haz doble clic para apuntarte rapidamente.",
+    TOOLTIP_QUICK_SIGNUP = "Haz doble clic para apuntarte rápidamente.",
     JOINED_GROUP_FOR    = "Te uniste a un grupo para %s.",
     GROUP_TYPE_UNKNOWN  = "esta actividad",
 }
@@ -252,7 +247,6 @@ local L_ruRU = {
     STATUS_NO_ROLE      = "Ничего не отмечено",
     ADDON_ENABLED       = "SmartLFG включён.",
     ADDON_DISABLED      = "SmartLFG отключён.",
-    FRIENDS_USAGE       = "Использование: /slfg friends on|off",
     CMD_UNKNOWN         = "Неизвестная команда '%s'. Введите /slfg help.",
     YES                 = "ДА",
     NO                  = "НЕТ",
@@ -298,7 +292,6 @@ local L_ptBR = {
     STATUS_NO_ROLE      = "Nenhum marcado",
     ADDON_ENABLED       = "SmartLFG ativado.",
     ADDON_DISABLED      = "SmartLFG desativado.",
-    FRIENDS_USAGE       = "Uso: /slfg friends on|off",
     CMD_UNKNOWN         = "Comando desconhecido '%s'. Digite /slfg help.",
     YES                 = "SIM",
     NO                  = "NÃO",
@@ -344,7 +337,6 @@ local L_itIT = {
     STATUS_NO_ROLE      = "Nessuno selezionato",
     ADDON_ENABLED       = "SmartLFG abilitato.",
     ADDON_DISABLED      = "SmartLFG disabilitato.",
-    FRIENDS_USAGE       = "Uso: /slfg friends on|off",
     CMD_UNKNOWN         = "Comando sconosciuto '%s'. Digita /slfg help.",
     YES                 = "SÌ",
     NO                  = "NO",

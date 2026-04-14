@@ -7,8 +7,8 @@ local function PrintHelp()
     local L, C = SmartLFG.L, SmartLFG.COLOR
     SmartLFG.Print(L.HELP_HEADER)
     SmartLFG.Print(C.ROLE .. "/slfg status"           .. C.RESET .. " — " .. L.HELP_STATUS)
-    SmartLFG.Print(C.ROLE .. "/slfg enable"           .. C.RESET .. " — " .. L.HELP_ENABLE)
-    SmartLFG.Print(C.ROLE .. "/slfg disable"          .. C.RESET .. " — " .. L.HELP_DISABLE)
+    SmartLFG.Print(C.ROLE .. "/slfg on"              .. C.RESET .. " — " .. L.HELP_ENABLE)
+    SmartLFG.Print(C.ROLE .. "/slfg off"             .. C.RESET .. " — " .. L.HELP_DISABLE)
     SmartLFG.Print(C.ROLE .. "/slfg friends"          .. C.RESET .. " — " .. L.HELP_FRIENDS)
     SmartLFG.Print(C.ROLE .. "/slfg tooltip"          .. C.RESET .. " — " .. L.HELP_TOOLTIP)
     SmartLFG.Print(string.format(L.HELP_ROLE_HINT, C.ROLE .. SmartLFG.GetDungeonFinderKey() .. C.RESET))
@@ -50,10 +50,10 @@ local function Dispatch(msg)
 
     if     cmd == "" or cmd == "help" then PrintHelp()
     elseif cmd == "status"  then CmdStatus()
-    elseif cmd == "enable"  then
+    elseif cmd == "on"  then
         SmartLFG.DB.Set("enabled", true)
         SmartLFG.Print(C.OK .. L.ADDON_ENABLED .. C.RESET)
-    elseif cmd == "disable" then
+    elseif cmd == "off" then
         SmartLFG.DB.Set("enabled", false)
         SmartLFG.Print(C.WARN .. L.ADDON_DISABLED .. C.RESET)
     elseif cmd == "friends" then CmdFriends()

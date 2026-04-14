@@ -46,6 +46,24 @@ function RM.CacheActivityName(resultID, name)
     end
 end
 
+--- Called by FrameHook from the LFGListApplicationDialog:OnShow hook.
+--- The dialog's ActivityName FontString is the most reliable capture point
+--- because Blizzard populates it with the properly formatted dropdown-selected
+--- activity (e.g. "Deadmines (Mythic Keystone)") for every player — solo,
+--- leader, and non-leader member receiving an invite.
+--- Also updates pendingListingJoin.activity directly, because the dialog may
+--- fire AFTER LFG_LIST_APPLICATION_STATUS_UPDATED has already armed the join
+--- with a stale fallback name (e.g. when a group leader signs up the group).
+--- @param name string
+function RM.SetPendingActivityLabel(name)
+    if name and name ~= "" then
+        pendingActivityLabel = name
+        if pendingListingJoin then
+            pendingListingJoin.activity = name
+        end
+    end
+end
+
 local APPLICATION_STATUS_BY_VALUE = {}
 for _, key in ipairs({
     "applied",
@@ -133,11 +151,10 @@ end
 ---
 --- Priority:
 ---   1. activityNameCache[resultID] — populated from the row frame's displayed
----      text by FrameHook on every ScrollBox layout. This is the most reliable
----      source because it reflects what the player sees and works for all sign-up
----      paths: SmartLFG double-click, manual button click, and leader invite.
+---      text by FrameHook on every ScrollBox layout.
 ---   2. info.activityName   — newer WoW exposes this directly on the search result.
----   3. GetActivityInfoTable / GetActivityInfo → table or plain-string variants.
+---   3. GetActivityInfoTable / GetActivityInfo resolved from info.activityIDs (array,
+---      WoW 10.x+) or info.activityID (scalar, legacy) — the dropdown selection.
 ---   4. info.name           — the player-typed listing title (last resort).
 ---
 --- @param resultID number|nil
@@ -159,12 +176,25 @@ local function GetPremadeActivityLabel(resultID)
         return info.activityName
     end
 
-    -- 3. Resolve via activityID (the dropdown selection).
-    --    Guard activityID == 0, which signals "no specific activity".
-    if info.activityID and info.activityID ~= 0 then
-        local label = ResolveActivityName(info.activityID)
-        if label and label ~= "" then return label end
+    -- 3. Resolve via activity ID(s).
+    -- WoW 10.x+ returns activityIDs as an array; older versions use a scalar activityID.
+    -- Build a unified list to try both, without duplicates.
+    local tried = {}
+    local function tryActivityID(aid)
+        if not aid or aid == 0 or tried[aid] then return nil end
+        tried[aid] = true
+        local label = ResolveActivityName(aid)
+        return (label and label ~= "") and label or nil
     end
+
+    if type(info.activityIDs) == "table" then
+        for _, aid in ipairs(info.activityIDs) do
+            local label = tryActivityID(aid)
+            if label then return label end
+        end
+    end
+    local label = tryActivityID(info.activityID)
+    if label then return label end
 
     -- 4. Last resort: the player-typed listing title.
     if info.name and info.name ~= "" then return info.name end
@@ -192,7 +222,7 @@ end
 --- the native Dungeon Finder panel. Called from the double-click hook or
 --- the /slfg signup command.
 function RM.SignUp()
-    if not SmartLFG.DB.Get("enabled") then return end
+    if not SmartLFG.IsPlayerSoloOrLeader() then return end
     if not HasRoleSelected() then return end
 
     -- Guard: already queued?
@@ -224,7 +254,7 @@ end
 --- time by FrameHook (frame.ActivityName FontString). It is the most reliable
 --- source because it reflects what the player sees regardless of WoW API changes.
 function RM.ApplyToGroup(resultID, activityNameHint)
-    if not SmartLFG.DB.Get("enabled") then return end
+    if not SmartLFG.IsPlayerSoloOrLeader() then return end
     if not HasRoleSelected() then return end
 
     resultID = resultID or GetSelectedPremadeResultID()
@@ -263,7 +293,6 @@ end
 --- role-check popup on the player's behalf using whatever roles WoW already
 --- has ticked in the Dungeon Finder panel.
 function RM.AutoAcceptRoleCheck()
-    if not SmartLFG.DB.Get("enabled") then return end
     if not SmartLFG.DB.Get("autoAcceptFriends") then return end
 
     local leader = SmartLFG.GetGroupLeader()
@@ -300,21 +329,39 @@ end
 ---                   WoW dialog is suppressed for members but the event still
 ---                   arrives, so we can read the entry info silently.
 function RM.OnActiveEntryUpdate()
-    if not SmartLFG.DB.Get("enabled") then return end
     if not (C_LFGList and C_LFGList.GetActiveEntryInfo) then return end
 
     local entry = C_LFGList.GetActiveEntryInfo()
     if not entry then return end
 
-    -- Try activityName directly on the entry first (WoW 12.x may expose it here),
-    -- then fall back to resolving from activityID via the activity info APIs.
+    -- Try activityName directly (WoW 12.x may expose it on the entry).
+    -- Otherwise resolve from activity IDs: WoW 10.x+ returns activityIDs (array),
+    -- older versions return activityID (scalar).
     local activityName = (type(entry.activityName) == "string" and entry.activityName ~= "" and entry.activityName)
-                      or (entry.activityID and ResolveActivityName(entry.activityID))
+
+    if not activityName then
+        local function tryID(aid)
+            if not aid or aid == 0 then return nil end
+            local n = ResolveActivityName(aid)
+            return (n and n ~= "") and n or nil
+        end
+        if type(entry.activityIDs) == "table" then
+            for _, aid in ipairs(entry.activityIDs) do
+                activityName = tryID(aid)
+                if activityName then break end
+            end
+        end
+        if not activityName then
+            activityName = tryID(entry.activityID)
+        end
+    end
 
     if activityName and activityName ~= "" then
-        -- pendingActivityLabel is consumed by OnLFGListApplicationStatusUpdated
-        -- or directly by MaybePrintJoinedListingGroup.
         pendingActivityLabel = activityName
+        -- Update pendingListingJoin if it was already armed with fallback/stale data.
+        if pendingListingJoin then
+            pendingListingJoin.activity = activityName
+        end
     end
 end
 
@@ -323,7 +370,6 @@ end
 --- @param resultID number|nil
 --- @param ... any
 function RM.OnLFGListApplicationStatusUpdated(resultID, ...)
-    if not SmartLFG.DB.Get("enabled") then return end
     if not resultID then return end
 
     local newStatusRaw, oldStatusRaw = ...
@@ -372,7 +418,6 @@ end
 --- blocked the message when the player was already in a group (e.g. the party
 --- leader signs up the whole group for a Premade listing). It is no longer needed.
 function RM.MaybePrintJoinedListingGroup()
-    if not SmartLFG.DB.Get("enabled") then return end
     if not pendingListingJoin then return end
 
     -- Wait until the player is actually in a home group before printing.
