@@ -116,6 +116,7 @@ local function HookTooltip(frame, mode)
         local resultID = (mode == "PREMADE") and GetPremadeResultIDFromChain(self) or nil
         if not CanShowTooltipHint(self, mode, resultID) then return end
         if GameTooltip:GetOwner() ~= self then return end
+        GameTooltip:AddLine(" ")
         GameTooltip:AddLine(SmartLFG.L.TOOLTIP_QUICK_SIGNUP, 0, 1, 1, true)
         GameTooltip:Show()
     end)

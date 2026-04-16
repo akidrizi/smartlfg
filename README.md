@@ -1,6 +1,6 @@
 # SmartLFG — Quick Apply LFG Sign-Ups & Auto-Accept Friend Queues
 
-**SmartLFG** is a lightweight World of Warcraft addon that speeds up dungeon and group sign-ups. Double-click any listing in the Dungeon Finder or Premade Groups browser to instantly apply, see an inline tooltip hint when a group is available, get notified when you join, or let the addon auto-accept role checks when a friend queues the group.
+**SmartLFG** is a lightweight World of Warcraft addon that speeds up dungeon and group sign-ups. Double-click any listing in the Dungeon Finder or Premade Groups browser to instantly apply, or let the addon auto-accept role checks when a friend queues the group.
 
 > **Compatible with WoW Midnight (12.x) · No dependencies · Zero background activity**
 
@@ -12,20 +12,6 @@
 Double-click any entry in the **Dungeon Finder** or **Premade Groups** browser — dungeons, raids, mythics, delves, quests, or anything else — and SmartLFG signs you up immediately using whatever role you already have ticked in the native WoW panel.
 
 Only works when you are **solo or the group leader**. Non-leader group members are silently skipped, preventing accidental sign-ups.
-
-### 🔍 Tooltip Hint
-When hovering over a sign-up-eligible listing, a subtle hint is appended to the existing row tooltip:
-
-> *Double-click to quickly sign up.*
-
-The hint appears only when sign-up is actually available: your role is ticked, you are solo or the leader, and the listing is not already closed or delisted. Toggle it with `/slfg tooltip`.
-
-### 📢 Join Notification
-When you (or your group leader) joins a group that originated from a Premade listing, SmartLFG prints a confirmation in chat:
-
-> **[SmartLFG]** Joined group for Maisara Caverns.
-
-The activity name is read from the listing's dropdown selection (dungeon, delve, raid, PvP activity, etc.) — not from the player-typed title. Works regardless of who triggered the invite.
 
 ### 👥 Friend Group Auto-Accept
 When a **friend queues your group** for a dungeon, SmartLFG automatically accepts the role-check popup on your behalf. Works with both BNet friends and in-game friends. Toggle it with `/slfg friends`.
@@ -44,12 +30,12 @@ SmartLFG reads these checkboxes live every time you sign up. Change your role an
 
 ### Signing Up
 - **Dungeon Finder:** Double-click any dungeon row to join the queue instantly.
-- **Premade Groups:** Double-click any listing → application submitted and the confirmation dialog auto-confirmed.
+- **Premade Groups:** Double-click any listing to apply instantly. SmartLFG auto-confirms the application dialog so you don't have to click twice.
 
 If no role is ticked, SmartLFG prints a reminder in chat and leaves the normal WoW flow untouched.
 
 ### Friend Auto-Accept
-When your group leader (who must be on your friends list) queues for a dungeon, the role-check popup that appears for all party members is automatically confirmed. You don't need to switch back to WoW just to click it.
+When your group leader is on your friends list and queues the group for a dungeon, WoW shows a role-check popup to all party members. SmartLFG automatically confirms that popup for you — so you don't need to switch back to WoW just to click it.
 
 ---
 
@@ -84,9 +70,6 @@ SmartLFG prints a chat message telling you to open the Dungeon Finder and tick a
 
 **Can I queue as multiple roles at once (e.g. Tank + Healer)?**
 Yes. SmartLFG reads whatever combination of roles you have ticked. If you tick Tank and Healer, it signs you up for both.
-
-**Does it work if I am not the group leader?**
-Double-click sign-up and the tooltip hint are silently disabled for non-leader group members — only the leader can sign the group up. The friend auto-accept and join notification still work for all members.
 
 **Can I turn it off temporarily?**
 Yes: `/slfg off`. This suppresses every feature until you run `/slfg on`.

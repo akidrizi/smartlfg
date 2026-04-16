@@ -149,22 +149,25 @@ function SmartLFG.IsPlayerSoloOrLeader()
     return UnitIsGroupLeader("player")
 end
 
---- Returns the name of the current group leader, or nil if not in a group.
---- @return string|nil
+--- Returns the name and unit token of the current group leader, or nil if not in a group.
+--- Returning the unit token avoids a second group scan when the caller needs
+--- unit data (e.g. UnitClass) immediately after resolving the leader.
+--- @return string|nil  name
+--- @return string|nil  unitToken  ("player", "party1"–"party4", "raid1"–"raid40")
 function SmartLFG.GetGroupLeader()
     local total = GetNumGroupMembers()
-    if total == 0 then return nil end
+    if total == 0 then return nil, nil end
 
     if UnitIsGroupLeader("player") then
-        return UnitName("player")
+        return UnitName("player"), "player"
     end
 
     for i = 1, math.min(total, 40) do
         local unit = (IsInRaid() and "raid" or "party") .. i
         if UnitExists(unit) and UnitIsGroupLeader(unit) then
-            return UnitName(unit)
+            return UnitName(unit), unit
         end
     end
 
-    return nil
+    return nil, nil
 end

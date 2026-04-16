@@ -32,7 +32,6 @@ globals = {
     "LE_PARTY_CATEGORY_HOME",
 
     -- LFD / queue API
-    "SetLFGRoles",
     "GetLFGRoles",
     "LFDRoleCheckPopupAcceptButton",
     "LFGTeleport",
@@ -45,7 +44,6 @@ globals = {
     -- C_* namespaces
     "C_BattleNet",
     "C_FriendList",
-    "C_Timer",
     "C_LFGList",
 
     -- ScrollBox (WoW 10.x+ scroll container used by Blizzard_LFGList)

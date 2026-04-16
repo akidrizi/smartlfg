@@ -3,11 +3,13 @@ SmartLFG Changelog
 
 1.0.0
 -----
-- Initial release.
+- Double-click to join sign-up in Dungeon Finder.
+- Auto-accept role-check from friends.
+- `/slfg` command to controll the addon.
 
 1.0.1
 -----
-- Command improvements.
+- `/slfg` command improvements.
 
 1.1.0
 -----
@@ -24,3 +26,12 @@ SmartLFG Changelog
 1.4.0
 -----
 - Announce joined group in chat.
+- Announce group sign-up in chat from friend.
+
+1.4.1
+-----
+- Improve announcements.
+
+1.4.2
+-----
+- Improve announcements for sign-up.

@@ -295,7 +295,7 @@ end
 function RM.AutoAcceptRoleCheck()
     if not SmartLFG.DB.Get("autoAcceptFriends") then return end
 
-    local leader = SmartLFG.GetGroupLeader()
+    local leader, leaderUnit = SmartLFG.GetGroupLeader()
     if not SmartLFG.IsFriend(leader) then return end
 
     if not HasRoleSelected() then return end
@@ -306,9 +306,11 @@ function RM.AutoAcceptRoleCheck()
     btn:Click()
 
     local C = SmartLFG.COLOR
+    local _, classFile = UnitClass(leaderUnit or "player")
+    local leaderColor = SmartLFG.CLASS_COLOR[classFile] or C.OK
     SmartLFG.Print(string.format(SmartLFG.L.AUTO_ACCEPTED,
         SmartLFG.GetLFDRoleDisplay() or "?",
-        C.OK .. tostring(leader) .. C.RESET
+        leaderColor .. tostring(leader) .. C.RESET
     ))
 end
 

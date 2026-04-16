@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # package.sh — builds a WoW-ready release zip for SmartLFG
 # Usage:  ./package.sh
-# Output: dist/v<version>.zip
+# Output: dist/<version>.zip
 set -euo pipefail
 
 # ---------------------------------------------------------------------------
@@ -21,7 +21,7 @@ if [[ -z "$VERSION" ]]; then
     exit 1
 fi
 
-echo "SmartLFG — building v${VERSION} …"
+echo "SmartLFG — building ${VERSION} …"
 
 # ---------------------------------------------------------------------------
 # Staging
@@ -32,19 +32,20 @@ STAGING="$DIST/SmartLFG"
 rm -rf "$DIST"
 mkdir -p "$STAGING"
 
-# Files/dirs to exclude from the release
+# Files/dirs to exclude from the release.
+# This is the single source of truth — release.yml delegates here via ./package.sh.
+# ⚠ Keep in sync with the ignore list in pkgmeta.yaml (used by the CurseForge packager).
 EXCLUDES=(
     '.git'
     '.github'
-    '.gitignore'
-    '.editorconfig'
-    '.luacheckrc'
-    'dist'
+    '.idea'
     'docs'
-    'node_modules'
+    'dist'
+    '.editorconfig'
+    '.gitignore'
+    '.luacheckrc'
     'package.sh'
     'pkgmeta.yaml'
-    'LICENSE.md'
     '*.zip'
     '*.tar.gz'
 )
@@ -60,7 +61,7 @@ rsync -a "${RSYNC_EXCLUDES[@]}" . "$STAGING/"
 # ---------------------------------------------------------------------------
 # Zip (top-level folder inside the archive must be "SmartLFG")
 # ---------------------------------------------------------------------------
-ZIPFILE="v${VERSION}.zip"
+ZIPFILE="${VERSION}.zip"
 
 cd "$DIST"
 zip -r "$ZIPFILE" SmartLFG/

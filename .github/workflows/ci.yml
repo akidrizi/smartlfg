@@ -22,7 +22,7 @@ on:
       - main
       - develop
     tags-ignore:
-      - 'v*'   # release.yml handles tags
+      - '[0-9]*'   # release.yml handles tags
   pull_request:
     branches:
       - main
@@ -45,23 +45,10 @@ jobs:
           sudo luarocks install luacheck
 
       # ── Step: Run luacheck on all source files ────────────────────────────
+      # All globals, ignore rules, and per-file overrides are defined in
+      # .luacheckrc — the single source of truth. No flags needed here.
       - name: Luacheck
-        run: |
-          luacheck src/ \
-            --std lua51 \
-            --max-line-length 120 \
-            --globals \
-              SmartLFGDB \
-              UnitClass UnitName UnitExists UnitIsGroupLeader \
-              GetNumGroupMembers IsInRaid \
-              SetLFGRoles ConfirmLFGRoles LFGTeleport GetLFGMode \
-              LE_LFG_CATEGORY_LFD \
-              BNGetNumFriends \
-              C_BattleNet C_FriendList C_Timer \
-              C_LFGList \
-              CreateFrame DEFAULT_CHAT_FRAME GetTime GetBuildInfo \
-              SLASH_SMARTLFG1 SLASH_SMARTLFG2 SlashCmdList \
-              LFGParentFrame LFGListFrame
+        run: luacheck src/
 
       # ── Step: Validate ## Version: is semver ─────────────────────────────
       - name: Validate .toc version

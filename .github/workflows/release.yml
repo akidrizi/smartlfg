@@ -4,18 +4,18 @@
 # ============================================================
 # Triggers on any tag that matches strict semantic versioning:
 #
-#   v<MAJOR>.<MINOR>.<PATCH>                 →  stable release
-#   v<MAJOR>.<MINOR>.<PATCH>-alpha.<N>       →  pre-release
-#   v<MAJOR>.<MINOR>.<PATCH>-beta.<N>        →  pre-release
-#   v<MAJOR>.<MINOR>.<PATCH>-rc.<N>          →  pre-release
+#   <MAJOR>.<MINOR>.<PATCH>                 →  stable release
+#   <MAJOR>.<MINOR>.<PATCH>-alpha.<N>       →  pre-release
+#   <MAJOR>.<MINOR>.<PATCH>-beta.<N>        →  pre-release
+#   <MAJOR>.<MINOR>.<PATCH>-rc.<N>          →  pre-release
 #
 # Regex (POSIX ERE, used in the `if:` filter):
-#   ^v(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(-((alpha|beta|rc)\.(0|[1-9]\d*)))?$
+#   ^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(-((alpha|beta|rc)\.(0|[1-9]\d*)))?$
 #
 # The workflow will:
 #   1. Validate the tag against the regex
 #   2. Verify the tag version matches ## Version: in SmartLFG.toc
-#   3. Package the addon into v<version>.zip
+#   3. Package the addon into <version>.zip
 #   4. Create a GitHub Release (pre-release flag set for alpha/beta/rc)
 #   5. Upload the zip as a release asset
 # ============================================================
@@ -28,9 +28,9 @@ env:
 on:
   push:
     tags:
-      # GitHub's tag filter uses glob syntax — this catches all v* tags.
+      # GitHub's tag filter uses glob syntax — matches bare semver tags.
       # Fine-grained semver validation is done in the validate job below.
-      - 'v*'
+      - '[0-9]*'
 
 permissions:
   contents: write   # needed to create releases and upload assets
@@ -53,7 +53,7 @@ jobs:
 
       # ── Step: Strict semver regex check ──────────────────────────────────
       # Regex breakdown:
-      #   ^v                           literal "v" prefix
+      #   ^                            start of string (no "v" prefix)
       #   (0|[1-9]\d*)                 MAJOR  — no leading zeros
       #   \.(0|[1-9]\d*)               MINOR
       #   \.(0|[1-9]\d*)               PATCH
@@ -68,17 +68,17 @@ jobs:
         id: parse
         run: |
           TAG="${{ github.ref_name }}"
-          SEMVER_RE='^v(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)(-(alpha|beta|rc)\.(0|[1-9][0-9]*))?$'
+          SEMVER_RE='^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)(-(alpha|beta|rc)\.(0|[1-9][0-9]*))?$'
 
           if [[ ! "$TAG" =~ $SEMVER_RE ]]; then
             echo "::error::Tag '$TAG' does not match the required semver format."
-            echo "::error::Expected: v<MAJOR>.<MINOR>.<PATCH> or v<MAJOR>.<MINOR>.<PATCH>-(alpha|beta|rc).<N>"
-            echo "::error::Examples: v1.2.3  v2.0.0-alpha.1  v1.0.0-rc.2"
+            echo "::error::Expected: <MAJOR>.<MINOR>.<PATCH> or <MAJOR>.<MINOR>.<PATCH>-(alpha|beta|rc).<N>"
+            echo "::error::Examples: 1.2.3  2.0.0-alpha.1  1.0.0-rc.2"
             exit 1
           fi
 
-          # Strip the leading "v" to get the bare version string
-          VERSION="${TAG#v}"
+          # Tag is already the bare version string — no stripping needed
+          VERSION="$TAG"
           echo "version=$VERSION" >> "$GITHUB_OUTPUT"
 
           # Detect pre-release (any tag with a hyphen suffix)
@@ -138,47 +138,22 @@ jobs:
         uses: actions/checkout@v5
 
       # ── Step: Build the addon zip ─────────────────────────────────────────
-      # Mirrors the logic in package.sh but runs entirely in-CI so there is no
-      # dependency on the script being present or executable.
+      # Delegates entirely to package.sh — the single source of truth for
+      # what gets included/excluded and how the zip is structured.
+      # Any changes to the exclude list only need to be made in package.sh.
       - name: Build zip
         id: zip
         run: |
+          chmod +x package.sh
+          ./package.sh
+
           VERSION="${{ needs.validate.outputs.version }}"
-          STAGING="dist/SmartLFG"
-          ZIP_NAME="v${VERSION}.zip"
+          ZIP_NAME="${VERSION}.zip"
           ZIP_PATH="dist/${ZIP_NAME}"
-
-          echo "📦 Packaging SmartLFG v${VERSION} …"
-
-          mkdir -p "$STAGING"
-
-          # Copy addon files, excluding dev/tooling artefacts
-          rsync -a \
-            --exclude='.git/' \
-            --exclude='.github/' \
-            --exclude='.gitignore' \
-            --exclude='.editorconfig' \
-            --exclude='.luacheckrc' \
-            --exclude='dist/' \
-            --exclude='docs/' \
-            --exclude='node_modules/' \
-            --exclude='package.sh' \
-            --exclude='pkgmeta.yaml' \
-            --exclude='*.zip' \
-            --exclude='*.tar.gz' \
-            . "$STAGING/"
-
-          # The zip must contain a top-level "SmartLFG/" folder so users can
-          # extract directly into their AddOns directory.
-          cd dist
-          zip -r "$ZIP_NAME" SmartLFG/
-          cd ..
 
           echo "zip_name=$ZIP_NAME" >> "$GITHUB_OUTPUT"
           echo "zip_path=$ZIP_PATH" >> "$GITHUB_OUTPUT"
 
-          echo "✅ Built: $ZIP_PATH"
-          echo "   $(du -sh "$ZIP_PATH" | cut -f1) on disk"
 
       # ── Step: Upload artifact for the release job ─────────────────────────
       - name: Upload build artifact
@@ -218,9 +193,9 @@ jobs:
         run: |
           CURRENT_TAG="${{ github.ref_name }}"
 
-          # Find the most recent *previous* semver tag
+          # Find the most recent *previous* bare semver tag
           PREV_TAG=$(git tag --sort=-version:refname \
-                     | grep -E '^v(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)' \
+                     | grep -E '^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)' \
                      | grep -v "^${CURRENT_TAG}$" \
                      | head -n 1 || true)
 

@@ -8,13 +8,15 @@ How to prepare the source tree, run the CI pipeline, and publish a release.
 
 ```
 SmartLFG/                        ← repository root (= addon folder name)
-├── SmartLFG.toc                 ← WoW Table of Contents
-├── .editorconfig
 ├── .gitignore
-├── .luacheckrc                  ← luacheck configuration
-├── package.sh                   ← local build helper
-├── README.md
+├── .editorconfig
+├── .luacheckrc                  ← luacheck configuration (single source of truth)
+├── CHANGELOG.md
 ├── LICENSE.md
+├── package.sh                   ← local build helper
+├── pkgmeta.yaml                 ← Curseforge build helper
+├── README.md
+├── SmartLFG.toc                 ← WoW Table of Contents
 ├── .github/
 │   └── workflows/
 │       ├── ci.yml               ← lint on push / PR
@@ -22,13 +24,14 @@ SmartLFG/                        ← repository root (= addon folder name)
 ├── docs/
 │   └── PACKAGING.md             ← this file
 └── src/
-    ├── Constants.lua
-    ├── Database.lua
-    ├── Util.lua
-    ├── RoleManager.lua
-    ├── FrameHook.lua
     ├── Commands.lua
-    └── Core.lua
+    ├── Constants.lua
+    ├── Core.lua
+    ├── Database.lua
+    ├── FrameHook.lua
+    ├── Locale.lua
+    ├── RoleManager.lua
+    └── Util.lua
 ```
 
 ---
@@ -37,12 +40,13 @@ SmartLFG/                        ← repository root (= addon folder name)
 
 ### `ci.yml` — Continuous Integration
 
-Runs on every push to `main` / `develop` and on all pull requests.
+Runs on every push to `main` / `develop` and on all pull requests.  
+Does **not** run on semver tags — those are handled exclusively by `release.yml`.
 
 | Step | What it checks |
 |---|---|
-| **luacheck** | Lints all `src/*.lua` against Lua 5.1 + known WoW API globals |
-| **TOC version** | `## Version:` is valid semver (`MAJOR.MINOR.PATCH` or with pre-release) |
+| **luacheck** | Lints all `src/*.lua` using `.luacheckrc` (Lua 5.1 + WoW API globals) |
+| **TOC version** | `## Version:` is valid semver (`MAJOR.MINOR.PATCH` or with pre-release suffix) |
 | **TOC interface** | `## Interface:` is a 6-digit WoW build number (e.g. `120001`) |
 
 ### `release.yml` — Release Pipeline
@@ -51,7 +55,7 @@ Triggers only on tags that match the semver regex (see below).
 
 ```
 Job 1: validate   →   regex check + version consistency with .toc
-Job 2: package    →   builds v<version>.zip
+Job 2: package    →   builds <version>.zip
 Job 3: release    →   creates GitHub Release, attaches zip, auto-labels pre-releases
 ```
 
@@ -59,24 +63,26 @@ Job 3: release    →   creates GitHub Release, attaches zip, auto-labels pre-re
 
 ## 3. Semver tag format & regex
 
+Tags use **bare semver** — no `v` prefix.
+
 ### Allowed tag formats
 
 | Tag | Type | Example use |
 |---|---|---|
-| `v1.2.3` | Stable release | Production-ready version |
-| `v1.2.3-alpha.1` | Pre-release | Early development build |
-| `v1.2.3-beta.2` | Pre-release | Feature-complete, testing |
-| `v1.2.3-rc.1` | Pre-release | Release candidate |
+| `1.2.3` | Stable release | Production-ready version |
+| `1.2.3-alpha.1` | Pre-release | Early development build |
+| `1.2.3-beta.2` | Pre-release | Feature-complete, testing |
+| `1.2.3-rc.1` | Pre-release | Release candidate |
 
 Tags that **do not** match (and will be rejected):
 
 ```
-1.2.3          ← missing "v" prefix
-v1.2           ← missing PATCH component
-v01.2.3        ← leading zero in MAJOR
-v1.2.3-dev.1   ← "dev" is not an allowed pre-release identifier
-v1.2.3-beta    ← missing numeric index after identifier
-v1.2.3.4       ← four components not allowed
+v1.2.3         ← "v" prefix not allowed
+1.2            ← missing PATCH component
+01.2.3         ← leading zero in MAJOR
+1.2.3-dev.1    ← "dev" is not an allowed pre-release identifier
+1.2.3-beta     ← missing numeric index after identifier
+1.2.3.4        ← four components not allowed
 ```
 
 ---
@@ -95,7 +101,7 @@ Edit `SmartLFG.toc` and bump `## Version:` to match the tag you plan to push:
 
 ```bash
 git add SmartLFG.toc
-git commit -m "chore: release v1.2.0"
+git commit -m "chore: release 1.2.0"
 git push
 ```
 
@@ -105,26 +111,26 @@ Wait for the CI workflow (`ci.yml`) to pass on `main` before tagging.
 
 ```bash
 # Stable release
-git tag v1.2.0
+git tag 1.2.0
 
 # Pre-release
-git tag v1.2.0-beta.1
+git tag 1.2.0-beta.1
 ```
 
 ### Step 4 — Push the tag
 
 ```bash
-git push origin v1.2.0
+git push origin 1.2.0
 ```
 
 The `release.yml` workflow starts automatically. It will:
 
-1. Validate `v1.2.0` against the semver regex ✅
+1. Validate `1.2.0` against the semver regex ✅
 2. Confirm that `## Version: 1.2.0` in `SmartLFG.toc` matches ✅
-3. Build `dist/v1.2.0.zip` ✅
-4. Create a GitHub Release named **SmartLFG v1.2.0** with:
+3. Build `dist/1.2.0.zip` ✅
+4. Create a GitHub Release named **SmartLFG 1.2.0** with:
    - Auto-generated changelog (commits since the last tag)
-   - `v1.2.0.zip` attached as a downloadable asset
+   - `1.2.0.zip` attached as a downloadable asset
    - Pre-release flag set automatically for `alpha`/`beta`/`rc` tags ✅
 
 ### Step 5 — Verify
@@ -132,8 +138,11 @@ The `release.yml` workflow starts automatically. It will:
 Go to **Releases** on your GitHub repository page. The new release should be visible with the zip attached. Download it and verify the folder structure inside:
 
 ```
-v1.2.0.zip
+1.2.0.zip
 └── SmartLFG/
+    ├── CHANGELOG.md
+    ├── LICENSE.md
+    ├── README.md
     ├── SmartLFG.toc
     └── src/
 ```
@@ -145,7 +154,7 @@ v1.2.0.zip
 ```bash
 chmod +x package.sh
 ./package.sh
-# → dist/v<version>.zip
+# → dist/<version>.zip
 ```
 
 ---
@@ -174,8 +183,4 @@ luarocks install luacheck   # one-time install
 luacheck src/               # uses .luacheckrc automatically
 ```
 
----
-
-## 8. Required repository secret
-
-The release workflow uses `secrets.GITHUB_TOKEN`, which GitHub **provides automatically** — no manual secret setup is required.
+All globals, ignore rules, and per-file overrides live in `.luacheckrc` — no extra flags needed.
