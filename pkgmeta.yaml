@@ -1,5 +1,5 @@
 package-as: SmartLFG
-manual-changelog: CHANGELOG.md
+manual-changelog: CHANGELOG.txt
 
 # ⚠ Keep this list in sync with the EXCLUDES array in package.sh
 ignore:

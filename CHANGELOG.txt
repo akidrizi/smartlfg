@@ -35,3 +35,8 @@ SmartLFG Changelog
 1.4.2
 -----
 - Improve announcements for sign-up & tooltip hint.
+
+1.4.3
+-----
+- Fix CurseForge packaging (remove invalid pkgmeta.yaml key).
+
