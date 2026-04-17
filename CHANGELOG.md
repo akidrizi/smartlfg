@@ -30,8 +30,8 @@ SmartLFG Changelog
 
 1.4.1
 -----
-- Improve announcements.
+- Improve all announcements.
 
 1.4.2
 -----
-- Improve announcements for sign-up.
+- Improve announcements for sign-up & tooltip hint.

@@ -1,7 +1,7 @@
 -- src/Database.lua
 -- Manages SmartLFGDB (SavedVariables) with versioned defaults.
 
-local addonName, SmartLFG = ...
+local _, SmartLFG = ...
 
 -- ---------------------------------------------------------------------------
 -- SavedVariables schema version — bump when adding new keys so existing

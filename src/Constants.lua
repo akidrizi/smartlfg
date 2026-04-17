@@ -2,7 +2,7 @@
 -- Centralised constants for SmartLFG.
 -- Imported first so every other module can rely on these globals.
 
-local addonName, SmartLFG = ...
+local _, SmartLFG = ...
 
 -- ---------------------------------------------------------------------------
 -- Role identifiers

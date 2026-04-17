@@ -1,7 +1,7 @@
 -- src/Commands.lua
 -- Registers and handles /slfg slash commands.
 
-local addonName, SmartLFG = ...
+local _, SmartLFG = ...
 
 local function PrintHelp()
     local L, C = SmartLFG.L, SmartLFG.COLOR

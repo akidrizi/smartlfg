@@ -1,11 +1,7 @@
-# pkgmeta.yaml for SmartLFG addon
 package-as: SmartLFG
 manual-changelog: CHANGELOG.md
 
-# Files or folders to ignore in packaging.
-# ⚠ Keep this list in sync with the EXCLUDES array in package.sh —
-# pkgmeta.yaml is used by the CurseForge/BigWigs packager tool and
-# cannot share the same config file.
+# ⚠ Keep this list in sync with the EXCLUDES array in package.sh
 ignore:
   - .git/
   - .github/
