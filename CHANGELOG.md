@@ -3,7 +3,7 @@ SmartLFG Changelog
 
 1.0.0
 -----
-- Double-click to join sign-up in Dungeon Finder.
+- Double-click to join sign-up in Group Finder.
 - Auto-accept role-check from friends.
 - `/slfg` command to controll the addon.
 
@@ -21,7 +21,7 @@ SmartLFG Changelog
 
 1.3.0
 -----
-- Tooltip hint in Dungeon Finder.
+- Tooltip hint in Group Finder.
 
 1.4.0
 -----
@@ -39,4 +39,10 @@ SmartLFG Changelog
 1.4.3
 -----
 - Fix CurseForge packaging (remove invalid pkgmeta.yaml key).
+
+1.5.0
+-----
+- New option: Shift + Double-click on listing for adding a note.
+- Improved announcements for sign-up, tooltip hint and note addition.
+- Update Locales.
 

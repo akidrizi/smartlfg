@@ -1,26 +1,3 @@
--- src/RoleManager.lua
--- Interacts with the native WoW LFG/LFGList systems to queue the player.
---
--- Role source (WoW 12.x / Midnight)
--- -----------------------------------------------------------------------
--- Roles are read live from the native Dungeon Finder tick-boxes via
--- GetLFGRoles(). SmartLFG never stores or overrides the player's role
--- preference - it simply reads whatever WoW already knows and acts on it.
---
---   GetLFGRoles() -> leader, tank, healer, dps  (all booleans)
---
--- If the player has not ticked any role box, SmartLFG prints a helpful
--- reminder and does nothing - exactly the fail-safe behaviour the user
--- expects.
---
--- Sign-up paths
--- -----------------------------------------------------------------------
---   LFD (Dungeon Finder):   LFGTeleport(false)
---   Premade Groups:         SearchPanel.SignUpButton:Click()
---                           -> LFGListApplicationDialog auto-confirmed
---                              by FrameHook's OnShow hook
--- -----------------------------------------------------------------------
-
 local _, SmartLFG = ...
 
 SmartLFG.RoleManager = {}
@@ -28,11 +5,20 @@ local RM = SmartLFG.RoleManager
 
 local LISTING_JOIN_TTL = 180
 local pendingListingJoin
-local pendingActivityLabel  -- activity name captured from the row frame at click time
+local pendingActivityLabel
+local noteMode = false
 
---- Maps resultID -> activity name read directly from visible row frames.
---- Populated by FrameHook on every ScrollBox layout so it is always current
---- before any sign-up event fires, regardless of who triggered the invite.
+--- Arms (true) or clears (false) note mode.
+--- Called by FrameHook before clicking SignUpButton on a Shift+double-click.
+function RM.SetNoteMode(val)
+    noteMode = not not val
+end
+
+--- Returns true when the next dialog open should pause for a player note.
+function RM.IsNoteMode()
+    return noteMode
+end
+
 local activityNameCache = {}
 
 --- Called from FrameHook whenever a Premade result row is displayed.
@@ -66,14 +52,8 @@ end
 
 local APPLICATION_STATUS_BY_VALUE = {}
 for _, key in ipairs({
-    "applied",
-    "invited",
-    "inviteaccepted",
-    "declined",
-    "cancelled",
-    "invitedeclined",
-    "timedout",
-    "failed",
+    "applied", "invited", "inviteaccepted", "declined",
+    "cancelled", "invitedeclined", "timedout", "failed",
 }) do
     local value = _G["LFG_LIST_APPLICATION_STATUS_" .. string.upper(key)]
     if value ~= nil then
@@ -95,29 +75,31 @@ end
 --- @return string|nil
 local function GetCurrentApplicationStatus(resultID)
     if not (C_LFGList and C_LFGList.GetApplicationInfo) then return nil end
-
     local info = C_LFGList.GetApplicationInfo(resultID)
     if type(info) == "table" then
         return NormalizeApplicationStatus(
-            info.applicationStatus
-            or info.status
-            or info.appStatus
-            or info.pendingStatus
+            info.applicationStatus or info.status or info.appStatus or info.pendingStatus
         )
     end
-
     return NormalizeApplicationStatus(info)
 end
 
--- ---------------------------------------------------------------------------
--- HasRoleSelected  (internal guard shared by all sign-up paths)
--- ---------------------------------------------------------------------------
+--- Returns true when the player has an active (non-terminal) application for the given result.
+--- Only "applied", "invited", and "inviteaccepted" are considered active.
+--- Numeric zero or unrecognised enum values are intentionally not treated as active.
+--- @param resultID number|nil
+--- @return boolean
+local function HasActiveApplication(resultID)
+    if not resultID then return false end
+    local status = GetCurrentApplicationStatus(resultID)
+    return status == "applied" or status == "invited" or status == "inviteaccepted"
+end
 
 --- Returns true when the player has ticked at least one role in the native
---- Dungeon Finder panel. Prints a reminder and returns false otherwise.
+--- Group Finder panel. Prints a reminder and returns false otherwise.
 local function HasRoleSelected()
     if SmartLFG.HasLFDRoleSelected() then return true end
-    local key = SmartLFG.COLOR.ROLE .. SmartLFG.GetDungeonFinderKey() .. SmartLFG.COLOR.RESET
+    local key = SmartLFG.COLOR.ROLE .. SmartLFG.GetGroupFinderKey() .. SmartLFG.COLOR.RESET
     SmartLFG.Warn(string.format(SmartLFG.L.NO_ROLE, key))
     return false
 end
@@ -129,20 +111,15 @@ end
 --- @return string|nil
 local function ResolveActivityName(activityID)
     if not activityID or activityID == 0 then return nil end
-
     local function tryAPI(fn)
         if not fn then return nil end
         local act = fn(activityID)
         if type(act) == "table" then
-            return act.activityName
-                or act.fullName
-                or act.shortName
-                or act.groupFinderActivityGroupName
+            return act.activityName or act.fullName or act.shortName or act.groupFinderActivityGroupName
         elseif type(act) == "string" and act ~= "" then
             return act
         end
     end
-
     return tryAPI(C_LFGList and C_LFGList.GetActivityInfoTable)
         or tryAPI(C_LFGList and C_LFGList.GetActivityInfo)
 end
@@ -161,24 +138,11 @@ end
 --- @return string|nil
 local function GetPremadeActivityLabel(resultID)
     if not resultID then return nil end
-
-    -- 1. Frame-text cache (most reliable — independent of C_LFGList API shape).
-    if activityNameCache[resultID] then
-        return activityNameCache[resultID]
-    end
-
+    if activityNameCache[resultID] then return activityNameCache[resultID] end
     if not (C_LFGList and C_LFGList.GetSearchResultInfo) then return nil end
     local info = C_LFGList.GetSearchResultInfo(resultID)
     if not info then return nil end
-
-    -- 2. Some WoW versions embed activityName directly on the search result.
-    if info.activityName and info.activityName ~= "" then
-        return info.activityName
-    end
-
-    -- 3. Resolve via activity ID(s).
-    -- WoW 10.x+ returns activityIDs as an array; older versions use a scalar activityID.
-    -- Build a unified list to try both, without duplicates.
+    if info.activityName and info.activityName ~= "" then return info.activityName end
     local tried = {}
     local function tryActivityID(aid)
         if not aid or aid == 0 or tried[aid] then return nil end
@@ -186,7 +150,6 @@ local function GetPremadeActivityLabel(resultID)
         local label = ResolveActivityName(aid)
         return (label and label ~= "") and label or nil
     end
-
     if type(info.activityIDs) == "table" then
         for _, aid in ipairs(info.activityIDs) do
             local label = tryActivityID(aid)
@@ -195,116 +158,77 @@ local function GetPremadeActivityLabel(resultID)
     end
     local label = tryActivityID(info.activityID)
     if label then return label end
-
-    -- 4. Last resort: the player-typed listing title.
     if info.name and info.name ~= "" then return info.name end
     return nil
 end
-
 
 --- Tries to read the currently selected Premade result ID from the SearchPanel.
 --- @return number|nil
 local function GetSelectedPremadeResultID()
     local panel = LFGListFrame and LFGListFrame.SearchPanel
     if not panel then return nil end
-
-    return panel.selectedResultID
-        or panel.selectedResult
-        or panel.selectedIndex
-        or panel.resultID
+    return panel.selectedResultID or panel.selectedResult or panel.selectedIndex or panel.resultID
 end
 
--- ---------------------------------------------------------------------------
--- SignUp  - LFD / Dungeon Finder path
--- ---------------------------------------------------------------------------
-
 --- Signs the player into the LFD queue using the roles currently ticked in
---- the native Dungeon Finder panel. Called from the double-click hook or
+--- the native Group Finder panel. Called from the double-click hook or
 --- the /slfg signup command.
 function RM.SignUp()
     if not SmartLFG.IsPlayerSoloOrLeader() then return end
     if not HasRoleSelected() then return end
-
-    -- Guard: already queued?
     local mode = GetLFGMode(LE_LFG_CATEGORY_LFD)
-    if mode then
-        local C = SmartLFG.COLOR
-        SmartLFG.Print(string.format(SmartLFG.L.ALREADY_QUEUED, C.ROLE .. tostring(mode) .. C.RESET))
-        return
-    end
-
-    -- Roles are already set in the native UI - just commit the queue.
+    if mode then return end
     LFGTeleport(false)
     SmartLFG.Print(string.format(SmartLFG.L.SIGNED_UP, SmartLFG.GetLFDRoleDisplay() or "?"))
 end
-
--- ---------------------------------------------------------------------------
--- ApplyToGroup  - Premade Groups path
--- ---------------------------------------------------------------------------
 
 --- Applies to a Premade Group from the LFG List browser.
 --- Called from the double-click hook on a result row frame.
 ---
 --- Flow (non-invasive - mirrors what a player clicks manually):
 ---   1. Click SearchPanel.SignUpButton -> LFGListApplicationDialog opens.
----   2. FrameHook's OnShow hook on LFGListApplicationDialog auto-clicks
----      ApplicationDialog.SignUpButton to confirm.
+---   2. FrameHook's OnShow hook auto-clicks ApplicationDialog.SignUpButton to
+---      confirm — UNLESS withNote is true, in which case note mode is armed and
+---      the dialog stays open so the player can type a note before submitting.
 ---
 --- activityNameHint is captured from the row frame's displayed text at click
 --- time by FrameHook (frame.ActivityName FontString). It is the most reliable
 --- source because it reflects what the player sees regardless of WoW API changes.
-function RM.ApplyToGroup(resultID, activityNameHint)
+function RM.ApplyToGroup(resultID, activityNameHint, withNote)
     if not SmartLFG.IsPlayerSoloOrLeader() then return end
     if not HasRoleSelected() then return end
-
     resultID = resultID or GetSelectedPremadeResultID()
-
-    -- Store the activity label now, while the UI context is fresh.
-    -- The frame-captured hint is preferred; API lookup is the fallback.
     pendingActivityLabel = (activityNameHint and activityNameHint ~= "" and activityNameHint)
                         or GetPremadeActivityLabel(resultID)
-
     local signUpBtn = LFGListFrame
         and LFGListFrame.SearchPanel
         and LFGListFrame.SearchPanel.SignUpButton
-
     if signUpBtn then
         if signUpBtn:IsEnabled() then
+            if withNote then RM.SetNoteMode(true) end
             signUpBtn:Click()
-            SmartLFG.Print(string.format(SmartLFG.L.APPLYING, SmartLFG.GetLFDRoleDisplay() or "?"))
-        else
-            SmartLFG.Print(SmartLFG.L.ALREADY_APPLIED)
+        elseif not HasActiveApplication(resultID) then
+            SmartLFG.Print(SmartLFG.L.MAX_APPLICATIONS)
         end
     elseif LFGListSearchPanel_SignUp and LFGListFrame and LFGListFrame.SearchPanel then
-        -- Fallback: LFGListSearchPanel_SignUp is a method on the SearchPanel.
         LFGListSearchPanel_SignUp(LFGListFrame.SearchPanel)
-        SmartLFG.Print(string.format(SmartLFG.L.APPLYING, SmartLFG.GetLFDRoleDisplay() or "?"))
     else
         SmartLFG.Warn(SmartLFG.L.NO_SIGNUP_BTN)
     end
 end
 
--- ---------------------------------------------------------------------------
--- AutoAcceptRoleCheck  - friend auto-accept path
--- ---------------------------------------------------------------------------
-
 --- Called when LFG_ROLE_CHECK_SHOW fires.
 --- If auto-accept is enabled AND the group leader is a friend, confirms the
 --- role-check popup on the player's behalf using whatever roles WoW already
---- has ticked in the Dungeon Finder panel.
+--- has ticked in the Group Finder panel.
 function RM.AutoAcceptRoleCheck()
     if not SmartLFG.DB.Get("autoAcceptFriends") then return end
-
     local leader, leaderUnit = SmartLFG.GetGroupLeader()
     if not SmartLFG.IsFriend(leader) then return end
-
     if not HasRoleSelected() then return end
-
-    -- ConfirmLFGRoles() was removed in WoW 12.x - click the native popup button.
     local btn = LFDRoleCheckPopupAcceptButton
     if not (btn and btn:IsVisible()) then return end
     btn:Click()
-
     local C = SmartLFG.COLOR
     local _, classFile = UnitClass(leaderUnit or "player")
     local leaderColor = SmartLFG.CLASS_COLOR[classFile] or C.OK
@@ -313,10 +237,6 @@ function RM.AutoAcceptRoleCheck()
         leaderColor .. tostring(leader) .. C.RESET
     ))
 end
-
--- ---------------------------------------------------------------------------
--- OnActiveEntryUpdate  - active listing state change
--- ---------------------------------------------------------------------------
 
 --- Called when LFG_LIST_ACTIVE_ENTRY_UPDATE fires.
 ---
@@ -332,15 +252,9 @@ end
 ---                   arrives, so we can read the entry info silently.
 function RM.OnActiveEntryUpdate()
     if not (C_LFGList and C_LFGList.GetActiveEntryInfo) then return end
-
     local entry = C_LFGList.GetActiveEntryInfo()
     if not entry then return end
-
-    -- Try activityName directly (WoW 12.x may expose it on the entry).
-    -- Otherwise resolve from activity IDs: WoW 10.x+ returns activityIDs (array),
-    -- older versions return activityID (scalar).
     local activityName = (type(entry.activityName) == "string" and entry.activityName ~= "" and entry.activityName)
-
     if not activityName then
         local function tryID(aid)
             if not aid or aid == 0 then return nil end
@@ -357,10 +271,8 @@ function RM.OnActiveEntryUpdate()
             activityName = tryID(entry.activityID)
         end
     end
-
     if activityName and activityName ~= "" then
         pendingActivityLabel = activityName
-        -- Update pendingListingJoin if it was already armed with fallback/stale data.
         if pendingListingJoin then
             pendingListingJoin.activity = activityName
         end
@@ -373,11 +285,9 @@ end
 --- @param ... any
 function RM.OnLFGListApplicationStatusUpdated(resultID, ...)
     if not resultID then return end
-
     local newStatusRaw, oldStatusRaw = ...
     local newStatus = NormalizeApplicationStatus(newStatusRaw) or GetCurrentApplicationStatus(resultID)
     local oldStatus = NormalizeApplicationStatus(oldStatusRaw)
-
     if newStatus == "declined"
         or newStatus == "cancelled"
         or newStatus == "invitedeclined"
@@ -389,9 +299,6 @@ function RM.OnLFGListApplicationStatusUpdated(resultID, ...)
         end
         return
     end
-
-    -- Arm on any non-terminal listing application signal; this keeps detection
-    -- independent from whether the sign-up was manual or SmartLFG-triggered.
     if newStatus == "applied"
         or newStatus == "invited"
         or newStatus == "inviteaccepted"
@@ -405,36 +312,26 @@ function RM.OnLFGListApplicationStatusUpdated(resultID, ...)
             activity  = pendingActivityLabel or GetPremadeActivityLabel(resultID),
             expiresAt = GetTime() + LISTING_JOIN_TTL,
         }
-        pendingActivityLabel = nil  -- consumed
+        pendingActivityLabel = nil
+        if newStatus == "applied" and oldStatus ~= "applied" then
+            SmartLFG.Print(string.format(SmartLFG.L.APPLYING, SmartLFG.GetLFDRoleDisplay() or "?"))
+        end
     end
 end
 
 --- Prints a join message only when the player enters a group via a listing source.
 --- Called from GROUP_ROSTER_UPDATE.
----
---- pendingListingJoin is the sole guard against duplicate prints — it is cleared
---- immediately after printing, so repeated GROUP_ROSTER_UPDATE fires (which WoW
---- sends for every roster change while grouped) will find it nil and return early.
----
---- wasInHomeGroup was previously used to detect solo→grouped transitions, but it
---- blocked the message when the player was already in a group (e.g. the party
---- leader signs up the whole group for a Premade listing). It is no longer needed.
 function RM.MaybePrintJoinedListingGroup()
     if not pendingListingJoin then return end
-
-    -- Wait until the player is actually in a home group before printing.
     local inHomeGroup = IsInGroup(LE_PARTY_CATEGORY_HOME) or IsInRaid(LE_PARTY_CATEGORY_HOME)
     if not inHomeGroup then return end
-
     if pendingListingJoin.expiresAt <= GetTime() then
         pendingListingJoin = nil
         return
     end
-
     if not pendingListingJoin.activity then
         pendingListingJoin.activity = GetPremadeActivityLabel(pendingListingJoin.resultID)
     end
-
     local activity = pendingListingJoin.activity or SmartLFG.L.GROUP_TYPE_UNKNOWN
     SmartLFG.Print(string.format(SmartLFG.L.JOINED_GROUP_FOR, activity))
     pendingListingJoin = nil

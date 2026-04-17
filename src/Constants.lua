@@ -1,4 +1,3 @@
--- src/Constants.lua
 -- Centralised constants for SmartLFG.
 -- Imported first so every other module can rely on these globals.
 

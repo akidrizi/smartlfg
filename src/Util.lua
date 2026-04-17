@@ -1,12 +1,5 @@
--- src/Util.lua
--- Generic helper utilities shared across SmartLFG modules.
-
 local _, SmartLFG = ...
 local C = SmartLFG.COLOR
-
--- ---------------------------------------------------------------------------
--- Chat output
--- ---------------------------------------------------------------------------
 
 --- Print a prefixed message to the default chat frame.
 --- @param msg string
@@ -28,10 +21,6 @@ function SmartLFG.GetAddonVersion()
     return C_AddOns.GetAddOnMetadata("SmartLFG", "Version") or "unknown"
 end
 
--- ---------------------------------------------------------------------------
--- Class helpers
--- ---------------------------------------------------------------------------
-
 --- Returns the classFile token for the current player (e.g. "WARRIOR").
 --- @return string
 function SmartLFG.GetPlayerClass()
@@ -48,13 +37,11 @@ function SmartLFG.GetClassColoredName(classFile)
     return color .. classFile .. C.RESET
 end
 
---- Returns the key currently bound to opening the Dungeon Finder / Group
---- Finder panel, formatted for display in chat messages.
+--- Returns the key currently bound to opening the Group Finder panel,
+--- formatted for display in chat messages.
 --- Falls back to a plain description if the action is unbound.
 --- @return string
-function SmartLFG.GetDungeonFinderKey()
-    -- "TOGGLEGROUPFINDER" is the WoW binding name for the Group Finder panel
-    -- (the same frame the player opens with the default "I" key).
+function SmartLFG.GetGroupFinderKey()
     local key = GetBindingKey("TOGGLEGROUPFINDER")
     if key and key ~= "" then
         return key
@@ -62,16 +49,9 @@ function SmartLFG.GetDungeonFinderKey()
     return SmartLFG.L.KEY_FALLBACK
 end
 
--- ---------------------------------------------------------------------------
--- LFD role helpers
--- ---------------------------------------------------------------------------
-
---- Reads the role tick-boxes the player has checked in the native Dungeon
+--- Reads the role tick-boxes the player has checked in the native Group
 --- Finder panel via GetLFGRoles() and returns a human-readable colored string.
 --- Returns nil (with no output) if no role box is ticked.
----
---- Examples:  ["TANK"] ["TANK, HEALER"] ["TANK, HEALER, DPS"]
----
 --- @return string|nil
 function SmartLFG.GetLFDRoleDisplay()
     local _, tank, healer, dps = GetLFGRoles()
@@ -90,11 +70,6 @@ function SmartLFG.HasLFDRoleSelected()
     return tank or healer or dps
 end
 
-
--- ---------------------------------------------------------------------------
--- Friends list lookup
--- ---------------------------------------------------------------------------
-
 --- Returns true if `name` (character name, realm optional) is on the
 --- player's friends list (both BNet game accounts and in-game friends).
 --- @param name string
@@ -105,7 +80,6 @@ function SmartLFG.IsFriend(name)
     local function strip(n) return (n:match("^(.-)%-") or n):lower() end
     local shortName = strip(name)
 
-    -- BNet friends
     for i = 1, BNGetNumFriends() do
         for j = 1, C_BattleNet.GetFriendNumGameAccounts(i) do
             local info = C_BattleNet.GetFriendGameAccountInfo(i, j)
@@ -115,7 +89,6 @@ function SmartLFG.IsFriend(name)
         end
     end
 
-    -- In-game friends
     for i = 1, C_FriendList.GetNumFriends() do
         local info = C_FriendList.GetFriendInfoByIndex(i)
         if info and info.name and strip(info.name) == shortName then
@@ -127,8 +100,6 @@ function SmartLFG.IsFriend(name)
 end
 
 --- Returns true when the player is alone or is the leader of their group.
---- Used to gate sign-up actions and tooltip hints — non-leaders should not
---- sign up or queue on behalf of a group they do not lead.
 --- @return boolean
 function SmartLFG.IsPlayerSoloOrLeader()
     if not IsInGroup(LE_PARTY_CATEGORY_HOME) then return true end

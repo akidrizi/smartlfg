@@ -61,6 +61,7 @@ globals = {
     "GetBuildInfo",
     "GetBindingKey",
     "GetLocale",
+    "IsShiftKeyDown",
     "C_AddOns",
 
     -- LFG frame globals

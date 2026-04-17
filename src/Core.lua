@@ -1,7 +1,3 @@
--- src/Core.lua
--- Entry point. Registers WoW events and wires up subsystems.
--- Load order: Constants → Locale → Database → Util → RoleManager → FrameHook → Commands → Core
-
 local addonName, SmartLFG = ...
 
 local Settings = _G.Settings
@@ -10,6 +6,9 @@ local InterfaceOptions_AddCategory = _G.InterfaceOptions_AddCategory
 local frame = CreateFrame("Frame", "SmartLFGCoreFrame", UIParent)
 local optionsRegistered = false
 
+--- Creates and registers the in-game options panel under Interface → AddOns.
+--- Supports both the modern Settings API (WoW 10.x+) and the legacy
+--- InterfaceOptions_AddCategory fallback. Runs once; subsequent calls are no-ops.
 local function RegisterOptionsPanel()
     if optionsRegistered then return end
 
@@ -45,6 +44,12 @@ frame:RegisterEvent("LFG_LIST_APPLICATION_STATUS_UPDATED")
 frame:RegisterEvent("LFG_LIST_ACTIVE_ENTRY_UPDATE")
 frame:RegisterEvent("GROUP_ROSTER_UPDATE")
 
+--- Central event dispatcher. Handles addon lifecycle, frame hooking, and all
+--- feature events. LFG_LIST_SEARCH_RESULTS_RECEIVED and ADDON_LOADED bypass
+--- the enabled gate so hooks are always in place. All other feature events
+--- return early when the addon is disabled.
+--- @param event string  WoW event name.
+--- @param ...   any     Event payload arguments.
 frame:SetScript("OnEvent", function(_, event, ...)
     if event == "ADDON_LOADED" then
         local loaded = ...
@@ -59,35 +64,22 @@ frame:SetScript("OnEvent", function(_, event, ...)
         end
 
     elseif event == "LFG_LIST_SEARCH_RESULTS_RECEIVED" then
-        -- Results are now visible in the ScrollBox — hook any new row frames.
-        -- This runs regardless of enabled state so hooks are in place when the
-        -- player later enables the addon without reloading.
         SmartLFG.FrameHook.HookLFGList()
 
     elseif not SmartLFG.DB.Get("enabled") then
-        -- Central enabled gate: all feature events below this line are suppressed
-        -- when the addon is disabled. MakeOnClick carries the equivalent gate for
-        -- all click-driven paths. Frame-script OnShow hooks have their own checks.
         return
 
     elseif event == "LFG_ROLE_CHECK_SHOW" then
-        -- Fires when a group leader queues for LFD and all members get a role-check popup.
         SmartLFG.RoleManager.AutoAcceptRoleCheck()
 
     elseif event == "LFG_LIST_APPLICATION_STATUS_UPDATED" then
-        -- Tracks listing invitation/acceptance state from WoW, independent of click source.
         local resultID, newStatus, oldStatus = ...
         SmartLFG.RoleManager.OnLFGListApplicationStatusUpdated(resultID, newStatus, oldStatus)
 
     elseif event == "LFG_LIST_ACTIVE_ENTRY_UPDATE" then
-        -- Fires for both the group leader and all members whenever the listing state
-        -- changes (group fills, member joins, listing ends). This is the most reliable
-        -- point to capture the activity name because C_LFGList.GetActiveEntryInfo()
-        -- is fully populated at this moment for everyone involved.
         SmartLFG.RoleManager.OnActiveEntryUpdate()
 
     elseif event == "GROUP_ROSTER_UPDATE" then
-        -- Fires on party/raid roster changes; used to confirm actual listing-source joins.
         SmartLFG.RoleManager.MaybePrintJoinedListingGroup()
     end
 end)
