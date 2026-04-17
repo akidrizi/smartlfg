@@ -21,7 +21,7 @@
 --                              by FrameHook's OnShow hook
 -- -----------------------------------------------------------------------
 
-local addonName, SmartLFG = ...
+local _, SmartLFG = ...
 
 SmartLFG.RoleManager = {}
 local RM = SmartLFG.RoleManager

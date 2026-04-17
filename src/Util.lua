@@ -1,7 +1,7 @@
 -- src/Util.lua
 -- Generic helper utilities shared across SmartLFG modules.
 
-local addonName, SmartLFG = ...
+local _, SmartLFG = ...
 local C = SmartLFG.COLOR
 
 -- ---------------------------------------------------------------------------
@@ -90,20 +90,6 @@ function SmartLFG.HasLFDRoleSelected()
     return tank or healer or dps
 end
 
--- ---------------------------------------------------------------------------
--- Role display helpers
--- ---------------------------------------------------------------------------
-
---- Returns a coloured display string for a single role constant.
---- @param role string  One of SmartLFG.ROLE.*
---- @return string
-function SmartLFG.RoleDisplay(role)
-    local R, L = SmartLFG.ROLE, SmartLFG.L
-    if role == R.TANK   then return C.TANK   .. L.ROLE_TANK    .. C.RESET end
-    if role == R.HEALER then return C.HEALER .. L.ROLE_HEALER  .. C.RESET end
-    if role == R.DPS    then return C.DPS    .. L.ROLE_DPS     .. C.RESET end
-    return C.WARN .. L.ROLE_UNKNOWN .. C.RESET
-end
 
 -- ---------------------------------------------------------------------------
 -- Friends list lookup

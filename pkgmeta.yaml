@@ -1,6 +1,7 @@
 # pkgmeta.yaml for SmartLFG addon
 package-as: SmartLFG
 manual-changelog: CHANGELOG.md
+curse-description: README.md
 
 # Files or folders to ignore in packaging.
 # ⚠ Keep this list in sync with the EXCLUDES array in package.sh —
