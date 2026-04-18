@@ -77,18 +77,21 @@ jobs:
       - name: Validate .toc interface version
         run: |
           TOC="SmartLFG.toc"
-          IFACE=$(grep -E '^##[[:space:]]+Interface:' "$TOC" | awk '{print $3}')
+          IFACE_RAW=$(grep -E '^##[[:space:]]+Interface:' "$TOC" | sed 's/^##[[:space:]]*Interface:[[:space:]]*//')
 
-          if [[ -z "$IFACE" ]]; then
+          if [[ -z "$IFACE_RAW" ]]; then
             echo "::error::Could not find '## Interface:' in $TOC."
             exit 1
           fi
 
-          # WoW interface versions are exactly 6 digits, e.g. 120001
-          if [[ ! "$IFACE" =~ ^[1-9][0-9]{5}$ ]]; then
-            echo "::error::## Interface: '$IFACE' does not look like a valid WoW interface version."
-            echo "::error::Expected a 6-digit number, e.g. 120001."
-            exit 1
-          fi
+          IFS=',' read -ra IFACE_LIST <<< "$IFACE_RAW"
+          for IFACE in "${IFACE_LIST[@]}"; do
+            IFACE="${IFACE// /}"
+            if [[ ! "$IFACE" =~ ^[1-9][0-9]{5}$ ]]; then
+              echo "::error::## Interface: '$IFACE' does not look like a valid WoW interface version."
+              echo "::error::Expected one or more comma-separated 6-digit numbers, e.g. 120001 or 110107, 120001."
+              exit 1
+            fi
+          done
 
-          echo "✅ ## Interface: $IFACE is valid."
+          echo "✅ ## Interface: $IFACE_RAW is valid."

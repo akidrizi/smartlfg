@@ -6,26 +6,33 @@ local InterfaceOptions_AddCategory = _G.InterfaceOptions_AddCategory
 local frame = CreateFrame("Frame", "SmartLFGCoreFrame", UIParent)
 local optionsRegistered = false
 
---- Creates and registers the in-game options panel under Interface → AddOns.
---- Supports both the modern Settings API (WoW 10.x+) and the legacy
---- InterfaceOptions_AddCategory fallback. Runs once; subsequent calls are no-ops.
 local function RegisterOptionsPanel()
     if optionsRegistered then return end
 
     local panel = CreateFrame("Frame", "SmartLFGOptionsPanel", UIParent)
     panel.name = addonName
+    panel:SetSize(900, 700)
 
-    local title = panel:CreateFontString(nil, "ARTWORK", "GameFontNormalHuge")
-    title:SetPoint("CENTER", panel, "CENTER", 0, 50)
-    title:SetText(addonName)
+    local face, _, flags = GameFontNormal:GetFont()
+    local C = SmartLFG.COLOR
 
-    local version = panel:CreateFontString(nil, "ARTWORK", "GameFontNormalSmall")
-    version:SetPoint("TOP", title, "BOTTOM", 0, -10)
+    local title = panel:CreateFontString(nil, "ARTWORK")
+    title:SetFont(face, 72, flags)
+    title:SetPoint("CENTER", panel, "CENTER", 0, 60)
+    title:SetJustifyH("CENTER")
+    title:SetText(C.ADDON .. addonName .. C.RESET)
+
+    local version = panel:CreateFontString(nil, "ARTWORK")
+    version:SetFont(face, 32, flags)
+    version:SetPoint("CENTER", panel, "CENTER", 0, -10)
+    version:SetJustifyH("CENTER")
     version:SetText(string.format(SmartLFG.L.OPTIONS_VERSION, SmartLFG.GetAddonVersion()))
 
-    local hint = panel:CreateFontString(nil, "ARTWORK", "GameFontHighlight")
-    hint:SetPoint("TOP", version, "BOTTOM", 0, -16)
-    hint:SetText(SmartLFG.L.OPTIONS_HINT)
+    local hint = panel:CreateFontString(nil, "ARTWORK")
+    hint:SetFont(face, 62, flags)
+    hint:SetPoint("CENTER", panel, "CENTER", 0, -90)
+    hint:SetJustifyH("CENTER")
+    hint:SetText(C.ADDON .. "/slfg" .. C.RESET)
 
     if Settings and Settings.RegisterCanvasLayoutCategory and Settings.RegisterAddOnCategory then
         local category = Settings.RegisterCanvasLayoutCategory(panel, addonName, addonName)
@@ -44,12 +51,6 @@ frame:RegisterEvent("LFG_LIST_APPLICATION_STATUS_UPDATED")
 frame:RegisterEvent("LFG_LIST_ACTIVE_ENTRY_UPDATE")
 frame:RegisterEvent("GROUP_ROSTER_UPDATE")
 
---- Central event dispatcher. Handles addon lifecycle, frame hooking, and all
---- feature events. LFG_LIST_SEARCH_RESULTS_RECEIVED and ADDON_LOADED bypass
---- the enabled gate so hooks are always in place. All other feature events
---- return early when the addon is disabled.
---- @param event string  WoW event name.
---- @param ...   any     Event payload arguments.
 frame:SetScript("OnEvent", function(_, event, ...)
     if event == "ADDON_LOADED" then
         local loaded = ...

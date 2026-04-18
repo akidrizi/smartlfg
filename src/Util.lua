@@ -1,46 +1,40 @@
 local _, SmartLFG = ...
 local C = SmartLFG.COLOR
 
---- Print a prefixed message to the default chat frame.
---- @param msg string
+SmartLFG.CLASS_COLOR = { RESET = "|r" }
+if RAID_CLASS_COLORS then
+    for classFile, color in pairs(RAID_CLASS_COLORS) do
+        SmartLFG.CLASS_COLOR[classFile] = string.format("|cff%02x%02x%02x",
+            color.r * 255, color.g * 255, color.b * 255)
+    end
+end
+
 function SmartLFG.Print(msg)
     DEFAULT_CHAT_FRAME:AddMessage(
         C.ADDON .. "[SmartLFG]" .. C.RESET .. " " .. tostring(msg)
     )
 end
 
---- Print an error/warning message (red prefix).
---- @param msg string
 function SmartLFG.Warn(msg)
     SmartLFG.Print(C.WARN .. msg .. C.RESET)
 end
 
---- Returns the addon version from the .toc file metadata.
---- @return string
 function SmartLFG.GetAddonVersion()
     return C_AddOns.GetAddOnMetadata("SmartLFG", "Version") or "unknown"
 end
 
---- Returns the classFile token for the current player (e.g. "WARRIOR").
---- @return string
 function SmartLFG.GetPlayerClass()
     local _, classFile = UnitClass("player")
     return classFile
 end
 
---- Returns the class name colored in its WoW class color.
---- @param classFile string  Optional — defaults to the current player's class.
---- @return string
 function SmartLFG.GetClassColoredName(classFile)
     classFile = classFile or SmartLFG.GetPlayerClass()
     local color = SmartLFG.CLASS_COLOR[classFile] or C.RESET
-    return color .. classFile .. C.RESET
+    local displayName = (LOCALIZED_CLASS_NAMES_MALE and LOCALIZED_CLASS_NAMES_MALE[classFile]) or classFile
+    return color .. displayName .. C.RESET
 end
 
---- Returns the key currently bound to opening the Group Finder panel,
---- formatted for display in chat messages.
---- Falls back to a plain description if the action is unbound.
---- @return string
 function SmartLFG.GetGroupFinderKey()
     local key = GetBindingKey("TOGGLEGROUPFINDER")
     if key and key ~= "" then
@@ -49,10 +43,6 @@ function SmartLFG.GetGroupFinderKey()
     return SmartLFG.L.KEY_FALLBACK
 end
 
---- Reads the role tick-boxes the player has checked in the native Group
---- Finder panel via GetLFGRoles() and returns a human-readable colored string.
---- Returns nil (with no output) if no role box is ticked.
---- @return string|nil
 function SmartLFG.GetLFDRoleDisplay()
     local _, tank, healer, dps = GetLFGRoles()
     local L, parts = SmartLFG.L, {}
@@ -63,17 +53,11 @@ function SmartLFG.GetLFDRoleDisplay()
     return table.concat(parts, ", ")
 end
 
---- Returns true when the player has ticked at least one role in the LFD panel.
---- @return boolean
 function SmartLFG.HasLFDRoleSelected()
     local _, tank, healer, dps = GetLFGRoles()
     return tank or healer or dps
 end
 
---- Returns true if `name` (character name, realm optional) is on the
---- player's friends list (both BNet game accounts and in-game friends).
---- @param name string
---- @return boolean
 function SmartLFG.IsFriend(name)
     if not name or name == "" then return false end
 
@@ -99,18 +83,11 @@ function SmartLFG.IsFriend(name)
     return false
 end
 
---- Returns true when the player is alone or is the leader of their group.
---- @return boolean
 function SmartLFG.IsPlayerSoloOrLeader()
     if not IsInGroup(LE_PARTY_CATEGORY_HOME) then return true end
     return UnitIsGroupLeader("player")
 end
 
---- Returns the name and unit token of the current group leader, or nil if not in a group.
---- Returning the unit token avoids a second group scan when the caller needs
---- unit data (e.g. UnitClass) immediately after resolving the leader.
---- @return string|nil  name
---- @return string|nil  unitToken  ("player", "party1"–"party4", "raid1"–"raid40")
 function SmartLFG.GetGroupLeader()
     local total = GetNumGroupMembers()
     if total == 0 then return nil, nil end

@@ -56,6 +56,7 @@ globals = {
     "CreateFrame",
     "UIParent",
     "GameTooltip",
+    "GameFontNormal",
     "DEFAULT_CHAT_FRAME",
     "GetTime",
     "GetBuildInfo",
@@ -63,6 +64,10 @@ globals = {
     "GetLocale",
     "IsShiftKeyDown",
     "C_AddOns",
+
+    -- Class colors and localized names (WoW globals)
+    "RAID_CLASS_COLORS",
+    "LOCALIZED_CLASS_NAMES_MALE",
 
     -- LFG frame globals
     "LFGParentFrame",
