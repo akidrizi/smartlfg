@@ -1,6 +1,19 @@
 local _, SmartLFG = ...
 local C = SmartLFG.COLOR
 
+-- ---------------------------------------------------------------------------
+-- Class colour codes — keyed by UnitClass() classFile token (e.g. "WARRIOR").
+-- Built from WoW's RAID_CLASS_COLORS so colors are always accurate and
+-- automatically correct for any WoW version or future new classes.
+-- ---------------------------------------------------------------------------
+SmartLFG.CLASS_COLOR = { RESET = "|r" }
+if RAID_CLASS_COLORS then
+    for classFile, color in pairs(RAID_CLASS_COLORS) do
+        SmartLFG.CLASS_COLOR[classFile] = string.format("|cff%02x%02x%02x",
+            color.r * 255, color.g * 255, color.b * 255)
+    end
+end
+
 --- Print a prefixed message to the default chat frame.
 --- @param msg string
 function SmartLFG.Print(msg)
@@ -34,7 +47,8 @@ end
 function SmartLFG.GetClassColoredName(classFile)
     classFile = classFile or SmartLFG.GetPlayerClass()
     local color = SmartLFG.CLASS_COLOR[classFile] or C.RESET
-    return color .. classFile .. C.RESET
+    local displayName = (LOCALIZED_CLASS_NAMES_MALE and LOCALIZED_CLASS_NAMES_MALE[classFile]) or classFile
+    return color .. displayName .. C.RESET
 end
 
 --- Returns the key currently bound to opening the Group Finder panel,

@@ -102,7 +102,6 @@ local function HookTooltip(frame, mode)
         if GameTooltip:GetOwner() ~= self then return end
         GameTooltip:AddLine(" ")
         GameTooltip:AddLine(SmartLFG.L.TOOLTIP_QUICK_SIGNUP, 0, 1, 1, true)
-        GameTooltip:AddLine(" ")
         GameTooltip:AddLine(SmartLFG.L.TOOLTIP_SHIFT_NOTE, 0, 1, 1, true)
         GameTooltip:Show()
     end)

@@ -1,9 +1,11 @@
 ## Interface: 120001
 ## Title: SmartLFG
-## Notes: SmartLFG automates the process for sign-up and role check in Group Finder.
 ## Author: Akis Idrizi
-## Version: 1.5.0
-## IconTexture: Interface\Icons\achievement_reputation_ogre
+## IconTexture: Interface\Addons\SmartLFG\media\icon
+## Notes: SmartLFG automates the process for sign-up and role check in Group Finder.
+## Version: 1.5.1
+## X-Curse-Project-ID: 1494840
+## X-Wago-ID: RNLkrYGo
 ## SavedVariables: SmartLFGDB
 ## Category: Dungeons & Raids
 ## Category-deDE: Dungeons & Schlachtzüge

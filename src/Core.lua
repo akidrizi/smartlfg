@@ -14,18 +14,27 @@ local function RegisterOptionsPanel()
 
     local panel = CreateFrame("Frame", "SmartLFGOptionsPanel", UIParent)
     panel.name = addonName
+    panel:SetSize(900, 700)
 
-    local title = panel:CreateFontString(nil, "ARTWORK", "GameFontNormalHuge")
-    title:SetPoint("CENTER", panel, "CENTER", 0, 50)
+    local face, _, flags = GameFontNormal:GetFont()
+
+    local title = panel:CreateFontString(nil, "ARTWORK")
+    title:SetFont(face, 72, flags)
+    title:SetPoint("TOP", panel, "TOP", 0, -40)
+    title:SetJustifyH("CENTER")
     title:SetText(addonName)
 
-    local version = panel:CreateFontString(nil, "ARTWORK", "GameFontNormalSmall")
-    version:SetPoint("TOP", title, "BOTTOM", 0, -10)
+    local version = panel:CreateFontString(nil, "ARTWORK")
+    version:SetFont(face, 32, flags)
+    version:SetPoint("TOP", title, "BOTTOM", 0, -12)
+    version:SetJustifyH("CENTER")
     version:SetText(string.format(SmartLFG.L.OPTIONS_VERSION, SmartLFG.GetAddonVersion()))
 
-    local hint = panel:CreateFontString(nil, "ARTWORK", "GameFontHighlight")
-    hint:SetPoint("TOP", version, "BOTTOM", 0, -16)
-    hint:SetText(SmartLFG.L.OPTIONS_HINT)
+    local hint = panel:CreateFontString(nil, "ARTWORK")
+    hint:SetFont(face, 62, flags)
+    hint:SetPoint("CENTER", panel, "CENTER", 0, 0)
+    hint:SetJustifyH("CENTER")
+    hint:SetText("/slfg")
 
     if Settings and Settings.RegisterCanvasLayoutCategory and Settings.RegisterAddOnCategory then
         local category = Settings.RegisterCanvasLayoutCategory(panel, addonName, addonName)

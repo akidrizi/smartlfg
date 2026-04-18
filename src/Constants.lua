@@ -33,22 +33,4 @@ SmartLFG.COLOR = {
     RESET   = "|r",
 }
 
--- ---------------------------------------------------------------------------
--- Class colour codes (WoW class colors, keyed by UnitClass() classFile token)
--- ---------------------------------------------------------------------------
-SmartLFG.CLASS_COLOR = {
-    WARRIOR      = "|cffc79c6e",
-    PALADIN      = "|cfff58cba",
-    HUNTER       = "|cffabd473",
-    ROGUE        = "|cfffff569",
-    PRIEST       = "|cffffffff",
-    DEATHKNIGHT  = "|cffc41e3a",
-    SHAMAN       = "|cff0070dd",
-    MAGE         = "|cff69ccf0",
-    WARLOCK      = "|cff9482ca",
-    MONK         = "|cff00ff96",
-    DRUID        = "|cffff7d0a",
-    DEMONHUNTER  = "|cffff8000",
-    EVOKER       = "|cffabba61",
-    RESET        = "|r",
-}
+
