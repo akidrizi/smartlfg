@@ -1,11 +1,10 @@
 local _, SmartLFG = ...
 
-local SCHEMA_VERSION = 4
+local SCHEMA_VERSION = 6
 
 local DEFAULTS = {
-    schemaVersion     = SCHEMA_VERSION,
-    enabled           = true,
-    autoAcceptFriends = true,
+    schemaVersion = SCHEMA_VERSION,
+    enabled       = true,
 }
 
 SmartLFG.DB = {}
@@ -20,6 +19,7 @@ function SmartLFG.DB.Init()
             end
         end
 
+        -- Roles now live in the native LFG role state, not the DB.
         SmartLFGDB.selectedRole  = nil
         SmartLFGDB.schemaVersion = SCHEMA_VERSION
     end

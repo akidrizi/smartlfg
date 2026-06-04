@@ -8,6 +8,11 @@ ignore:
   - .idea/
   - docs/
   - dist/
+  - CLAUDE.md
+  - media/logo.png
+  - media/role-dungeon-finder.png
+  - media/tooltip-group-finder.png
+  - media/tooltip-only.png
   - .editorconfig
   - .gitignore
   - .luacheckrc

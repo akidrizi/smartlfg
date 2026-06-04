@@ -1,6 +1,21 @@
 SmartLFG Changelog
 ==================
 
+2.0.0
+-----
+- New in-game options panel: enable/disable and pick your sign-up role(s).
+- Class-aware multi-role selection — choose any roles your class can perform.
+- Double-click a Premade Groups listing to sign up; Shift + double-click to add a note.
+- Auto-accept the role check when any leader queues the group.
+- Tooltip hint on listings you can sign up to.
+- Simplified commands: /slfg opens the options panel, /slfg on|off toggles the addon.
+- Major internal overhaul and cleanup; roles now use the native Group Finder role state.
+
+1.7.0
+-----
+- Removed signup & joined messages to make add-on less noisy.
+- Optimize signup method.
+
 1.6.0
 -----
 - Improved status command with Wow Class colors.

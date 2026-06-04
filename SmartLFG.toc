@@ -3,10 +3,10 @@
 ## Author: Akis Idrizi
 ## IconTexture: Interface\Addons\SmartLFG\media\icon
 ## Notes: Auto-accept Group Finder role check and double-click to sign-up.
-## Version: 1.6.0
+## Version: 2.0.0
 ## X-Curse-Project-ID: 1494840
 ## X-Wago-ID: RNLkrYGo
-## SavedVariables: SmartLFGDB
+## SavedVariablesPerCharacter: SmartLFGDB
 ## Category: Dungeons & Raids
 ## Category-deDE: Dungeons & Schlachtzüge
 ## Category-esES: Mazmorras y bandas
@@ -23,5 +23,6 @@ src\Core.lua
 src\Database.lua
 src\FrameHook.lua
 src\Locale.lua
+src\Options.lua
 src\RoleManager.lua
 src\Util.lua
