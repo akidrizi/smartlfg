@@ -1,15 +1,12 @@
 SmartLFG Changelog
 ==================
 
-2.1.0
------
-- New option: toggle Quick sign-up (double-click sign-up, Shift + Double-click note, and the tooltip hint) on or off.
-- New option: toggle Auto-accept role checks on or off.
-- Both toggles sit under the master Enable switch and grey out while the addon is disabled.
-
 2.0.0
 -----
 - New in-game options panel: enable/disable and pick your sign-up role(s).
+- New option: toggle Quick sign-up (double-click sign-up, Shift + Double-click note, and the tooltip hint) on or off.
+- New option: toggle Auto-accept role checks on or off.
+- Both toggles sit under the master Enable switch and grey out while the addon is disabled.
 - Class-aware multi-role selection — choose any roles your class can perform.
 - Double-click a Premade Groups listing to sign up; Shift + double-click to add a note.
 - Auto-accept the role check when any leader queues the group.

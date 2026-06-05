@@ -24,12 +24,9 @@ Stop clicking through menus — double-click any Premade listing and you're sign
 
 ### Changelog
 
-**2.1.0**
-- New options: toggle **Quick sign-up** (double-click, Shift+note, tooltip hint) and **Auto-accept role checks** independently.
-- Both toggles live under the master Enable switch and grey out while the addon is off.
-
 **2.0.0**
 - New in-game options panel: enable/disable and pick your sign-up role(s).
+- Toggle **Quick sign-up** (double-click, Shift+note, tooltip hint) and **Auto-accept role checks** independently.
 - Class-aware multi-role selection — choose any roles your class can perform.
 - Double-click a Premade Groups listing to sign up; Shift + double-click to add a note.
 - Auto-accept the role check when **any** leader queues the group (no longer limited to friends).
