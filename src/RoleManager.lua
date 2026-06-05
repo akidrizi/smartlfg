@@ -29,8 +29,15 @@ function RM.SetNote(text) noteText = text or "" end
 function RM.ApplyToGroup(withNote)
     if not SmartLFG.IsPlayerSoloOrLeader() then return end
     if not SmartLFG.HasLFDRoleSelected() then
-        SmartLFG.Warn(SmartLFG.L.ROLE_REQUIRED)
-        return
+        -- No role ticked in /slfg: fall back to the current spec's role so the
+        -- player can still sign up, and tell them what we picked (and why).
+        local role = SmartLFG.GetCurrentSpecRole()
+        if not role then
+            SmartLFG.Warn(SmartLFG.L.ROLE_REQUIRED)
+            return
+        end
+        SmartLFG.SetRole(role)
+        SmartLFG.Print(string.format(SmartLFG.L.ROLE_FALLBACK_SPEC, SmartLFG.GetRoleName(role)))
     end
 
     local panel = LFGListFrame and LFGListFrame.SearchPanel

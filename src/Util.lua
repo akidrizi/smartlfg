@@ -40,6 +40,20 @@ function SmartLFG.GetSelectedRoles()
     return { TANK = tank, HEALER = healer, DAMAGER = dps }
 end
 
+-- The role token of the player's *current* specialization (TANK/HEALER/DAMAGER),
+-- or nil if it can't be resolved. Used as the fallback when no role is selected.
+function SmartLFG.GetCurrentSpecRole()
+    local specIndex = GetSpecialization()
+    if not specIndex then return nil end
+    return select(5, GetSpecializationInfo(specIndex))
+end
+
+-- Set the native LFG role to exactly one role token, clearing the others.
+function SmartLFG.SetRole(role)
+    local leader = GetLFGRoles()
+    SetLFGRoles(leader, role == "TANK", role == "HEALER", role == "DAMAGER")
+end
+
 -- Toggle one role on/off in the native LFG role state. The sign-up dialog and
 -- the dungeon finder both read these, so this is how the panel's role choice
 -- actually takes effect — no secure-frame manipulation, no taint.

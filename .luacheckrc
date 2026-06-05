@@ -37,6 +37,7 @@ globals = {
 
     -- Specialization / role API (class-based role selection)
     "GetNumSpecializations",
+    "GetSpecialization",
     "GetSpecializationInfo",
 
     -- In-game options / settings panel
