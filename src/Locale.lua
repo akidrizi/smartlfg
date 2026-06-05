@@ -21,9 +21,6 @@ local L_enUS = {
     -- Warning when trying to sign up with no role selected
     ROLE_REQUIRED        = "Select a role in /slfg before signing up.",
 
-    -- Info when no role is selected and we fall back to the current spec's role
-    ROLE_FALLBACK_SPEC   = "No role selected in /slfg — signing up as %s from your current spec.",
-
     -- Role display names (used in colored output)
     ROLE_TANK            = "Tank",
     ROLE_HEALER          = "Healer",

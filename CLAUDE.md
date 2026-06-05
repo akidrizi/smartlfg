@@ -49,10 +49,12 @@ roles the player's class can perform** (derived from its specializations). The P
 sign-up dialog inherits these roles natively — SmartLFG never writes the secure dialog.
 Roles are therefore per-character and persisted by Blizzard, not stored in our DB.
 
-**Spec fallback:** if the player signs up with *no* native LFG role selected,
-`ApplyToGroup` falls back to the current spec's role (`GetCurrentSpecRole` →
-`SetRole`) and prints a one-line notice (`ROLE_FALLBACK_SPEC`) saying which role was
-chosen and why. `ROLE_REQUIRED` is only warned if even the spec role can't be resolved.
+**First-run pre-selection:** the first time SmartLFG sees a character (per-character
+`roleInitialized` DB flag, set on `PLAYER_LOGIN`), `RoleManager.PreselectRoleFromSpec`
+ticks the current spec's role (`GetCurrentSpecRole` → `SetRole`) so sign-up works out of
+the box. It never overrides a role the player already has selected and only runs once, so
+manual choices are respected thereafter. If a role is later cleared, sign-up warns
+`ROLE_REQUIRED` as normal.
 
 ---
 
@@ -75,10 +77,10 @@ cross-module calls happen inside function bodies, which run only after every fil
 |---|---|
 | `Constants.lua` | UI color codes (`SmartLFG.COLOR`), role tokens (`SmartLFG.ROLES`), native role-icon atlases (`SmartLFG.ROLE_ATLAS`). |
 | `Locale.lua` | All user-visible strings (`SmartLFG.L`). `L_enUS` is the authoritative base; `deDE/frFR/esES/ruRU/ptBR/itIT` metatable-fallback to it (`esMX`→`esES`). |
-| `Database.lua` | `SmartLFGDB` access via `DB.Get`/`DB.Set` only. Per-character. `SCHEMA_VERSION = 7`; keys are `enabled`, `quickSignUp`, `autoAccept` (+ `schemaVersion`). |
+| `Database.lua` | `SmartLFGDB` access via `DB.Get`/`DB.Set` only. Per-character. `SCHEMA_VERSION = 7`; keys are `enabled`, `quickSignUp`, `autoAccept`, `roleInitialized` (+ `schemaVersion`). |
 | `Util.lua` | Stateless helpers: `Print`, `Warn`, `GetAddonVersion`, `HasLFDRoleSelected`, the role model (`GetAvailableRoles`, `GetSelectedRoles`, `GetCurrentSpecRole`, `SetRole`, `ToggleRole`, `GetRoleName`), and `IsPlayerSoloOrLeader`. |
 | `Options.lua` | The options panel: enable checkbox, Quick sign-up + Auto-accept toggles, and the multi-select native role-icon row. `O.Register()`, `O.Open()`, `O.Refresh()`; `CreateCheck` builds one DB-bound checkbox, `CreateRoleButton` builds one role icon. |
-| `RoleManager.lua` | Behaviors: `ApplyToGroup` (premade sign-up), `SignUp` (LFD queue — legacy), `AutoAcceptRoleCheck` (gated by the `autoAccept` DB key), and the session note (`GetNote`/`SetNote`) + note mode for Shift. |
+| `RoleManager.lua` | Behaviors: `ApplyToGroup` (premade sign-up), `SignUp` (LFD queue — legacy), `AutoAcceptRoleCheck` (gated by the `autoAccept` DB key), `PreselectRoleFromSpec` (first-run role seeding), and the session note (`GetNote`/`SetNote`) + note mode for Shift. |
 | `FrameHook.lua` | Hooks the LFG UI: premade row double-click + tooltip + application-dialog auto-submit (all gated by the `quickSignUp` DB key), note hold-open / deferred note restore, and the LFD dungeon-list double-click. |
 | `Commands.lua` | `/slfg` (opens panel) and `/slfg on\|off`. |
 | `Core.lua` | Entry point: registers events, holds the enabled-gate, calls `Options.Register()`. |
@@ -88,6 +90,7 @@ cross-module calls happen inside function bodies, which run only after every fil
 | Event | Gate | Handler |
 |---|---|---|
 | `ADDON_LOADED` | always | Init DB + options panel; hook `Blizzard_LFGList` and `Blizzard_LookingForGroup` when they lazy-load. |
+| `PLAYER_LOGIN` | always | `RoleManager.PreselectRoleFromSpec()` — first-run role seeding (spec data is ready by now). |
 | `LFG_LIST_SEARCH_RESULTS_RECEIVED` | always | Re-hook recycled premade ScrollBox rows. |
 | `LFG_ROLE_CHECK_SHOW` | enabled | `RoleManager.AutoAcceptRoleCheck()` (no-ops unless the `autoAccept` key is set). |
 

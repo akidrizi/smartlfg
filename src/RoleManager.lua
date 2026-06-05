@@ -21,6 +21,30 @@ local noteText = ""
 function RM.GetNote()     return noteText end
 function RM.SetNote(text) noteText = text or "" end
 
+-- ── First-run role pre-selection ────────────────────────────────────────────
+-- The very first time SmartLFG sees a character, pre-tick the role of its
+-- current spec so sign-up works out of the box. Runs once (guarded by the
+-- per-character `roleInitialized` DB flag) and never overrides a role the
+-- player already has selected, so manual choices are always respected.
+function RM.PreselectRoleFromSpec()
+    if SmartLFG.DB.Get("roleInitialized") then return end
+
+    -- Already has a native LFG role set: nothing to seed, just mark it done.
+    if SmartLFG.HasLFDRoleSelected() then
+        SmartLFG.DB.Set("roleInitialized", true)
+        return
+    end
+
+    -- Spec data may not be ready yet; if so, leave the flag unset and retry
+    -- on the next login rather than locking in "no role".
+    local role = SmartLFG.GetCurrentSpecRole()
+    if not role then return end
+
+    SmartLFG.SetRole(role)
+    SmartLFG.DB.Set("roleInitialized", true)
+    SmartLFG.Options.Refresh()
+end
+
 -- ── Sign up to a Premade group ──────────────────────────────────────────────
 -- Opens the application dialog. FrameHook's OnShow hook either auto-submits
 -- (plain double-click) or holds it open for a note (note mode). The role comes
@@ -29,15 +53,8 @@ function RM.SetNote(text) noteText = text or "" end
 function RM.ApplyToGroup(withNote)
     if not SmartLFG.IsPlayerSoloOrLeader() then return end
     if not SmartLFG.HasLFDRoleSelected() then
-        -- No role ticked in /slfg: fall back to the current spec's role so the
-        -- player can still sign up, and tell them what we picked (and why).
-        local role = SmartLFG.GetCurrentSpecRole()
-        if not role then
-            SmartLFG.Warn(SmartLFG.L.ROLE_REQUIRED)
-            return
-        end
-        SmartLFG.SetRole(role)
-        SmartLFG.Print(string.format(SmartLFG.L.ROLE_FALLBACK_SPEC, SmartLFG.GetRoleName(role)))
+        SmartLFG.Warn(SmartLFG.L.ROLE_REQUIRED)
+        return
     end
 
     local panel = LFGListFrame and LFGListFrame.SearchPanel

@@ -3,6 +3,7 @@ local addonName, SmartLFG = ...
 local frame = CreateFrame("Frame", "SmartLFGCoreFrame", UIParent)
 
 frame:RegisterEvent("ADDON_LOADED")
+frame:RegisterEvent("PLAYER_LOGIN")
 frame:RegisterEvent("LFG_ROLE_CHECK_SHOW")
 frame:RegisterEvent("LFG_LIST_SEARCH_RESULTS_RECEIVED")
 
@@ -18,6 +19,10 @@ frame:SetScript("OnEvent", function(_, event, ...)
         elseif loaded == "Blizzard_LookingForGroup" then
             SmartLFG.FrameHook.HookLFD()
         end
+
+    elseif event == "PLAYER_LOGIN" then
+        -- Spec data is reliably available now; seed the role on first run.
+        SmartLFG.RoleManager.PreselectRoleFromSpec()
 
     elseif event == "LFG_LIST_SEARCH_RESULTS_RECEIVED" then
         SmartLFG.FrameHook.HookLFGList()

@@ -3,10 +3,12 @@ local _, SmartLFG = ...
 local SCHEMA_VERSION = 7
 
 local DEFAULTS = {
-    schemaVersion = SCHEMA_VERSION,
-    enabled       = true,
-    autoAccept    = true,
-    quickSignUp   = true,
+    schemaVersion   = SCHEMA_VERSION,
+    enabled         = true,
+    autoAccept      = true,
+    quickSignUp     = true,
+    -- One-shot guard for first-run role pre-selection (see RoleManager).
+    roleInitialized = false,
 }
 
 SmartLFG.DB = {}
