@@ -158,9 +158,11 @@ inside the hardware-click event** so the protected `ApplyToGroup` is allowed. We
   `pcall`-guarded restore on the Shift path only; if the client forbids it, the box
   stays empty and the player types it. Plain double-click relies on Blizzard's own note
   retention (which clears on reject/delist). **Status: imperfect; verify per client.**
-- **Auto-accept role check** needs real-world verification with a leader, and is not yet
-  timing-proofed (the popup button may not be visible the same frame
-  `LFG_ROLE_CHECK_SHOW` fires).
+- **Auto-accept role check** retries the accept click (every 0.1s, up to ~1s) until the
+  popup is no longer visible, because a single click fired at `LFG_ROLE_CHECK_SHOW`
+  occasionally doesn't register and leaves the native prompt up. Verified via tracing
+  that each role check completes server-side (no stacking); the retry closes the
+  intermittent single-click misses.
 - **LFD (dungeon-finder) hooking is still present** (`FH.HookLFD`, `RoleManager.SignUp`
   via `LFGTeleport`). The product direction is Premade-only; removing LFD is pending.
 

@@ -83,11 +83,28 @@ function RM.SignUp()
 end
 
 -- ── Auto-accept role check ──────────────────────────────────────────────────
+-- A single click fired at LFG_ROLE_CHECK_SHOW occasionally doesn't register
+-- (the popup is laid out but the click lands a frame too early), leaving the
+-- native prompt up. So we retry: re-click every interval until the popup is no
+-- longer visible — which reliably means our accept went through — or we hit the
+-- attempt cap. Clicking an already-accepted popup is a harmless no-op, and the
+-- visibility check makes this self-terminating. Accepts for any leader (the
+-- friends-list gate was removed in the overhaul).
+local ACCEPT_RETRY_INTERVAL = 0.1   -- seconds between attempts
+local ACCEPT_MAX_TRIES      = 10    -- ~1s total
+
+local function tryAcceptRoleCheck(tries)
+    local btn = LFDRoleCheckPopupAcceptButton
+    -- Popup gone → our accept registered (or it was cancelled). Done.
+    if not (btn and btn:IsVisible()) then return end
+
+    if btn:IsEnabled() then btn:Click() end
+
+    if tries >= ACCEPT_MAX_TRIES then return end
+    C_Timer.After(ACCEPT_RETRY_INTERVAL, function() tryAcceptRoleCheck(tries + 1) end)
+end
+
 function RM.AutoAcceptRoleCheck()
     if not SmartLFG.DB.Get("autoAccept") then return end
-    -- Accept for any leader (the friends-list gate was removed in the overhaul).
-    -- TODO(rework B): make this timing-proof — the popup button may not be
-    -- visible in the same frame the LFG_ROLE_CHECK_SHOW event fires.
-    if not (LFDRoleCheckPopupAcceptButton and LFDRoleCheckPopupAcceptButton:IsVisible()) then return end
-    LFDRoleCheckPopupAcceptButton:Click()
+    tryAcceptRoleCheck(0)
 end
