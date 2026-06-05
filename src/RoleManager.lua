@@ -111,33 +111,13 @@ local function AcceptViaSecureClick(button)
     ChatEdit_SendText(eb, 0)
 end
 
--- `acceptGen` is the current run's token. It's bumped on every new role check and
--- whenever the player physically touches the accept button, which invalidates any
--- in-flight retry chain. This is the "get out of the way" guarantee: once auto-
--- accept can't get through (cumulative session taint) and the player clicks
--- Accept themselves, we immediately stop spamming `/click` so we aren't fighting
--- their manual click — letting a single press finish the accept.
-local acceptGen = 0
-local manualCancelHooked = false
-
-local function HookManualCancel(btn)
-    if manualCancelHooked or not (btn and btn.HookScript) then return end
-    manualCancelHooked = true
-    -- OnMouseDown is hardware-only; our `/click` never triggers it, so this fires
-    -- only on a real player click.
-    btn:HookScript("OnMouseDown", function() acceptGen = acceptGen + 1 end)
-end
-
 -- `seen` tracks whether the popup has ever been visible during this run. We may
 -- fire before Blizzard lays the popup out (handler order for LFG_ROLE_CHECK_SHOW
 -- isn't guaranteed), so an invisible button early on means "not ready yet" — keep
 -- polling. Once we've seen it and it's gone, the accept went through and we stop.
-local function tryAcceptRoleCheck(tries, seen, gen)
-    if gen ~= acceptGen then return end  -- superseded by a new check or a manual click
-
+local function tryAcceptRoleCheck(tries, seen)
     local btn = LFDRoleCheckPopupAcceptButton
     if btn and btn:IsVisible() then
-        HookManualCancel(btn)
         AcceptViaSecureClick(btn)
         seen = true
     elseif seen then
@@ -145,11 +125,10 @@ local function tryAcceptRoleCheck(tries, seen, gen)
     end
 
     if tries >= ACCEPT_MAX_TRIES then return end
-    C_Timer.After(ACCEPT_RETRY_INTERVAL, function() tryAcceptRoleCheck(tries + 1, seen, gen) end)
+    C_Timer.After(ACCEPT_RETRY_INTERVAL, function() tryAcceptRoleCheck(tries + 1, seen) end)
 end
 
 function RM.AutoAcceptRoleCheck()
     if not SmartLFG.DB.Get("autoAccept") then return end
-    acceptGen = acceptGen + 1
-    tryAcceptRoleCheck(0, false, acceptGen)
+    tryAcceptRoleCheck(0, false)
 end

@@ -170,12 +170,8 @@ inside the hardware-click event** so the protected `ApplyToGroup` is allowed. We
   mid-typed message is never clobbered, falling back to a direct click otherwise. A
   self-terminating poll (every 0.1s, up to ~1s) waits for the popup to appear — handler
   order for `LFG_ROLE_CHECK_SHOW` isn't guaranteed, so we may fire before Blizzard lays
-  it out — clicks it, and stops once it's been seen and is gone. After ~8–9 checks in one
-  session cumulative taint can still defeat the click (resets on `/reload`); when that
-  happens an `OnMouseDown` hook on the accept button (hardware-only — our `/click` never
-  triggers it) bumps `acceptGen` to cancel the in-flight retry chain, so we stop spamming
-  `/click` the moment the player clicks Accept themselves and a single manual press
-  finishes it. Role checks always complete server-side (no stacking).
+  it out — clicks it, and stops once it's been seen and is gone. Role checks always
+  complete server-side (no stacking).
 - **LFD (dungeon-finder) hooking is still present** (`FH.HookLFD`, `RoleManager.SignUp`
   via `LFGTeleport`). The product direction is Premade-only; removing LFD is pending.
 
