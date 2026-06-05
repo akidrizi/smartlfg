@@ -159,14 +159,18 @@ inside the hardware-click event** so the protected `ApplyToGroup` is allowed. We
   stays empty and the player types it. Plain double-click relies on Blizzard's own note
   retention (which clears on reject/delist). **Status: imperfect; verify per client.**
 - **Auto-accept role check** accepts by running the secure `/click
-  LFDRoleCheckPopupAcceptButton` command through a hidden editbox (`RunSecureClick`),
-  not a direct `:Click()`. A direct click from the non-hardware `LFG_ROLE_CHECK_SHOW`
-  path is tainted and intermittently dropped (tracing: ~1 in 9 missed; calling
-  `CompleteLFGRoleCheck` directly was worse — heavy taint, role panel appeared). The
-  `/click` command runs the click inside Blizzard's secure code path, laundering the
-  taint. A self-terminating retry (every 0.1s, up to ~1s, stops once the popup is no
-  longer visible) covers any residual timing miss. Role checks always complete
-  server-side (no stacking).
+  LFDRoleCheckPopupAcceptButton` command through the chat editbox
+  (`AcceptViaSecureClick`), not a direct `:Click()`. A direct click from the
+  non-hardware `LFG_ROLE_CHECK_SHOW` path is tainted and intermittently dropped
+  (tracing: ~1 in 9 missed; calling `CompleteLFGRoleCheck` directly was worse — heavy
+  taint, role panel appeared). The `/click` command runs the click inside Blizzard's
+  secure code path, laundering the taint. The command must go through a real
+  chat editbox (`DEFAULT_CHAT_FRAME.editBox`) — a standalone `ChatFrameEditBoxTemplate`
+  errors on load (no backing `chatFrame`); we only hijack it while it's hidden so a
+  mid-typed message is never clobbered, falling back to a direct click otherwise. A
+  self-terminating retry (every 0.1s, up to ~1s, stops once the popup is no longer
+  visible) covers any residual miss. Role checks always complete server-side (no
+  stacking).
 - **LFD (dungeon-finder) hooking is still present** (`FH.HookLFD`, `RoleManager.SignUp`
   via `LFGTeleport`). The product direction is Premade-only; removing LFD is pending.
 

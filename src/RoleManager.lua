@@ -91,20 +91,24 @@ end
 -- the chat command handler runs the click inside Blizzard's secure code path,
 -- not our tainted one, so the protected accept goes through cleanly.
 --
--- We send the command through our own hidden editbox (not DEFAULT_CHAT_FRAME's)
--- so we never clobber a message the player is mid-typing. Accepts for any leader
+-- The command must go through a real, fully-initialized chat editbox
+-- (DEFAULT_CHAT_FRAME.editBox); a standalone ChatFrameEditBoxTemplate errors on
+-- load because it has no backing chatFrame. To avoid clobbering a message the
+-- player is mid-typing, we only hijack the editbox when it's hidden (idle); if
+-- it's open we fall back to a best-effort direct click. Accepts for any leader
 -- (the friends-list gate was removed in the overhaul).
 local ACCEPT_RETRY_INTERVAL = 0.1   -- seconds between attempts
 local ACCEPT_MAX_TRIES      = 10    -- ~1s total
 
-local cmdBox
-local function RunSecureClick(buttonName)
-    if not cmdBox then
-        cmdBox = CreateFrame("EditBox", "SmartLFGCmdRunner", nil, "ChatFrameEditBoxTemplate")
-        cmdBox:Hide()
+local function AcceptViaSecureClick(button)
+    local eb = DEFAULT_CHAT_FRAME and DEFAULT_CHAT_FRAME.editBox
+    if not eb or eb:IsShown() then
+        -- Editbox busy (player typing) or unavailable: don't steal it.
+        if button:IsEnabled() then button:Click() end
+        return
     end
-    cmdBox:SetText("/click " .. buttonName)
-    ChatEdit_SendText(cmdBox, 0)
+    eb:SetText("/click " .. button:GetName())
+    ChatEdit_SendText(eb, 0)
 end
 
 local function tryAcceptRoleCheck(tries)
@@ -112,7 +116,7 @@ local function tryAcceptRoleCheck(tries)
     -- Popup gone → our accept registered (or it was cancelled). Done.
     if not (btn and btn:IsVisible()) then return end
 
-    RunSecureClick("LFDRoleCheckPopupAcceptButton")
+    AcceptViaSecureClick(btn)
 
     if tries >= ACCEPT_MAX_TRIES then return end
     C_Timer.After(ACCEPT_RETRY_INTERVAL, function() tryAcceptRoleCheck(tries + 1) end)
