@@ -26,6 +26,11 @@ forget: sensible defaults, one small options panel.
 4. **Tooltip hint.** Hovering an applicable listing appends a two-line hint, in the
    addon's signature cyan, at the bottom of the tooltip.
 
+Two independent toggles in the options panel sit under the master **Enable** switch:
+**Quick sign-up** (features 1, 2 and 4 — double-click, Shift+double-click note, and the
+tooltip hint) and **Auto-accept role checks** (feature 3). Each can be turned off on its
+own; both are disabled (greyed) in the panel while the master switch is off.
+
 ### Commands
 
 | Command            | Behavior                                                          |
@@ -65,11 +70,11 @@ cross-module calls happen inside function bodies, which run only after every fil
 |---|---|
 | `Constants.lua` | UI color codes (`SmartLFG.COLOR`), role tokens (`SmartLFG.ROLES`), native role-icon atlases (`SmartLFG.ROLE_ATLAS`). |
 | `Locale.lua` | All user-visible strings (`SmartLFG.L`). `L_enUS` is the authoritative base; `deDE/frFR/esES/ruRU/ptBR/itIT` metatable-fallback to it (`esMX`→`esES`). |
-| `Database.lua` | `SmartLFGDB` access via `DB.Get`/`DB.Set` only. Per-character. `SCHEMA_VERSION = 6`; the only key is `enabled` (+ `schemaVersion`). |
+| `Database.lua` | `SmartLFGDB` access via `DB.Get`/`DB.Set` only. Per-character. `SCHEMA_VERSION = 7`; keys are `enabled`, `quickSignUp`, `autoAccept` (+ `schemaVersion`). |
 | `Util.lua` | Stateless helpers: `Print`, `Warn`, `GetAddonVersion`, `HasLFDRoleSelected`, the role model (`GetAvailableRoles`, `GetSelectedRoles`, `ToggleRole`, `GetRoleName`), and `IsPlayerSoloOrLeader`. |
-| `Options.lua` | The options panel: enable checkbox + multi-select native role-icon row. `O.Register()`, `O.Open()`, `O.Refresh()`; `CreateRoleButton` builds one role icon. |
-| `RoleManager.lua` | Behaviors: `ApplyToGroup` (premade sign-up), `SignUp` (LFD queue — legacy), `AutoAcceptRoleCheck`, and the session note (`GetNote`/`SetNote`) + note mode for Shift. |
-| `FrameHook.lua` | Hooks the LFG UI: premade row double-click + tooltip, the application-dialog auto-submit / note hold-open / deferred note restore, and the LFD dungeon-list double-click. |
+| `Options.lua` | The options panel: enable checkbox, Quick sign-up + Auto-accept toggles, and the multi-select native role-icon row. `O.Register()`, `O.Open()`, `O.Refresh()`; `CreateCheck` builds one DB-bound checkbox, `CreateRoleButton` builds one role icon. |
+| `RoleManager.lua` | Behaviors: `ApplyToGroup` (premade sign-up), `SignUp` (LFD queue — legacy), `AutoAcceptRoleCheck` (gated by the `autoAccept` DB key), and the session note (`GetNote`/`SetNote`) + note mode for Shift. |
+| `FrameHook.lua` | Hooks the LFG UI: premade row double-click + tooltip + application-dialog auto-submit (all gated by the `quickSignUp` DB key), note hold-open / deferred note restore, and the LFD dungeon-list double-click. |
 | `Commands.lua` | `/slfg` (opens panel) and `/slfg on\|off`. |
 | `Core.lua` | Entry point: registers events, holds the enabled-gate, calls `Options.Register()`. |
 
@@ -79,7 +84,7 @@ cross-module calls happen inside function bodies, which run only after every fil
 |---|---|---|
 | `ADDON_LOADED` | always | Init DB + options panel; hook `Blizzard_LFGList` and `Blizzard_LookingForGroup` when they lazy-load. |
 | `LFG_LIST_SEARCH_RESULTS_RECEIVED` | always | Re-hook recycled premade ScrollBox rows. |
-| `LFG_ROLE_CHECK_SHOW` | enabled | `RoleManager.AutoAcceptRoleCheck()`. |
+| `LFG_ROLE_CHECK_SHOW` | enabled | `RoleManager.AutoAcceptRoleCheck()` (no-ops unless the `autoAccept` key is set). |
 
 **Enabled gate:** a single `elseif not DB.Get("enabled") then return` in `Core.lua` sits
 between the always-on events and the feature events. Frame-script paths in

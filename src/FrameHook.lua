@@ -55,8 +55,9 @@ local function CanShowTooltipHint(frame, mode, resultID)
     if mode == "LFD" and GetLFGMode(LE_LFG_CATEGORY_LFD) then
         return false
     end
-    if mode == "PREMADE" and not IsPremadeSignUpAvailable(resultID) then
-        return false
+    if mode == "PREMADE" then
+        if not SmartLFG.DB.Get("quickSignUp") then return false end
+        if not IsPremadeSignUpAvailable(resultID) then return false end
     end
     if frame and frame.IsEnabled and not frame:IsEnabled() then return false end
     return true
@@ -90,6 +91,7 @@ end
 local function OnDoubleClickPremade(_, button)
     if button ~= "LeftButton" then return end
     if not SmartLFG.DB.Get("enabled") then return end
+    if not SmartLFG.DB.Get("quickSignUp") then return end
     if not SmartLFG.IsPlayerSoloOrLeader() then return end
     SmartLFG.RoleManager.ApplyToGroup(IsShiftKeyDown())
 end
@@ -216,6 +218,7 @@ function FH.HookLFGList()
     if appDialog and not onShowHooked[appDialog] then
         appDialog:HookScript("OnShow", function()
             if not SmartLFG.DB.Get("enabled") then return end
+            if not SmartLFG.DB.Get("quickSignUp") then return end
             if not SmartLFG.IsPlayerSoloOrLeader() then return end
 
             -- Shift+double-click: hold the dialog open and try to restore the

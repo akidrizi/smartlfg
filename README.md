@@ -10,6 +10,7 @@ Stop clicking through menus — double-click any Premade listing and you're sign
 * Auto-accepts the role check popup when any leader queues the group.
 * **Pick your role(s) in the options panel:** `/slfg` opens a multi-select role picker, limited to the roles your class can actually perform. Your selection maps to your native Group Finder roles, so the sign-up dialog inherits them automatically.
 * Tooltip hint on listings you can sign up to.
+* **Toggle features independently:** turn **Quick sign-up** (double-click, note, tooltip hint) and **Auto-accept role checks** on or off separately in `/slfg`.
 * Multilingual support: 🇬🇧 `English`, 🇩🇪 `German`, 🇫🇷 `French`, 🇪🇸 `Spanish`, 🇷🇺 `Russian`, 🇧🇷 `Portuguese (Brazil)`, 🇮🇹 `Italian`
 
 ### Commands
@@ -22,6 +23,10 @@ Stop clicking through menus — double-click any Premade listing and you're sign
 `/smartlfg` is an alias for `/slfg`.
 
 ### Changelog
+
+**2.1.0**
+- New options: toggle **Quick sign-up** (double-click, Shift+note, tooltip hint) and **Auto-accept role checks** independently.
+- Both toggles live under the master Enable switch and grey out while the addon is off.
 
 **2.0.0**
 - New in-game options panel: enable/disable and pick your sign-up role(s).

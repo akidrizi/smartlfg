@@ -1,10 +1,12 @@
 local _, SmartLFG = ...
 
-local SCHEMA_VERSION = 6
+local SCHEMA_VERSION = 7
 
 local DEFAULTS = {
     schemaVersion = SCHEMA_VERSION,
     enabled       = true,
+    autoAccept    = true,
+    quickSignUp   = true,
 }
 
 SmartLFG.DB = {}

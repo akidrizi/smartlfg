@@ -7,10 +7,37 @@ local InterfaceOptionsFrame_OpenToCategory = _G.InterfaceOptionsFrame_OpenToCate
 SmartLFG.Options = {}
 local O = SmartLFG.Options
 
-local panel          -- the canvas frame
-local categoryID     -- modern Settings category id (for OpenToCategory)
-local enabledCheck   -- the enable checkbox
-local roleButtons = {}  -- role token -> button
+local panel            -- the canvas frame
+local categoryID       -- modern Settings category id (for OpenToCategory)
+local enabledCheck     -- the master enable checkbox
+local quickSignUpCheck -- toggles double-click sign-up + tooltip hint
+local autoAcceptCheck  -- toggles auto-accept of role checks
+local roleButtons = {} -- role token -> button
+
+-- ── One labelled checkbox bound to a DB key ─────────────────────────────────
+-- Returns the check (so callers can read it in Refresh) and its description
+-- font string (so the next widget can anchor below it).
+local function CreateCheck(parent, name, dbKey, labelText, descText, anchorBelow)
+    local check = CreateFrame("CheckButton", name, parent, "UICheckButtonTemplate")
+    check:SetPoint("TOPLEFT", anchorBelow, "BOTTOMLEFT", 0, -16)
+
+    local label = check:CreateFontString(nil, "ARTWORK", "GameFontNormal")
+    label:SetPoint("LEFT", check, "RIGHT", 4, 0)
+    label:SetText(labelText)
+
+    local desc = parent:CreateFontString(nil, "ARTWORK", "GameFontHighlightSmall")
+    desc:SetPoint("TOPLEFT", check, "BOTTOMLEFT", 4, -4)
+    desc:SetWidth(520)
+    desc:SetJustifyH("LEFT")
+    desc:SetText(descText)
+
+    check:SetScript("OnClick", function(self)
+        SmartLFG.DB.Set(dbKey, self:GetChecked() and true or false)
+        O.Refresh()
+    end)
+
+    return check, desc
+end
 
 -- ── One role icon button ────────────────────────────────────────────────────
 -- A single building block: a clickable native role icon. Selecting it stores
@@ -87,9 +114,16 @@ local function BuildPanel()
         O.Refresh()
     end)
 
+    -- Feature toggles
+    local quickSignUpDesc, autoAcceptDesc
+    quickSignUpCheck, quickSignUpDesc = CreateCheck(panel, "SmartLFGQuickSignUpCheck",
+        "quickSignUp", L.OPTIONS_QUICKSIGNUP, L.OPTIONS_QUICKSIGNUP_DESC, enabledDesc)
+    autoAcceptCheck, autoAcceptDesc = CreateCheck(panel, "SmartLFGAutoAcceptCheck",
+        "autoAccept", L.OPTIONS_AUTOACCEPT, L.OPTIONS_AUTOACCEPT_DESC, quickSignUpDesc)
+
     -- Role section
     local roleHeader = panel:CreateFontString(nil, "ARTWORK", "GameFontNormal")
-    roleHeader:SetPoint("TOPLEFT", enabledDesc, "BOTTOMLEFT", -4, -28)
+    roleHeader:SetPoint("TOPLEFT", autoAcceptDesc, "BOTTOMLEFT", -4, -28)
     roleHeader:SetText(L.OPTIONS_ROLE)
 
     local prev
@@ -117,7 +151,15 @@ end
 function O.Refresh()
     if not panel then return end
 
-    enabledCheck:SetChecked(SmartLFG.DB.Get("enabled") and true or false)
+    local enabled = SmartLFG.DB.Get("enabled") and true or false
+    enabledCheck:SetChecked(enabled)
+
+    -- Sub-toggles reflect their own DB value but are disabled while the master
+    -- switch is off, so it's clear they have no effect.
+    quickSignUpCheck:SetChecked(SmartLFG.DB.Get("quickSignUp") and true or false)
+    autoAcceptCheck:SetChecked(SmartLFG.DB.Get("autoAccept") and true or false)
+    quickSignUpCheck:SetEnabled(enabled)
+    autoAcceptCheck:SetEnabled(enabled)
 
     local available = SmartLFG.GetAvailableRoles()
     local selected  = SmartLFG.GetSelectedRoles()

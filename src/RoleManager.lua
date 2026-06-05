@@ -60,6 +60,7 @@ end
 
 -- ── Auto-accept role check ──────────────────────────────────────────────────
 function RM.AutoAcceptRoleCheck()
+    if not SmartLFG.DB.Get("autoAccept") then return end
     -- Accept for any leader (the friends-list gate was removed in the overhaul).
     -- TODO(rework B): make this timing-proof — the popup button may not be
     -- visible in the same frame the LFG_ROLE_CHECK_SHOW event fires.
