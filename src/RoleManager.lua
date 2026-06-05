@@ -111,18 +111,24 @@ local function AcceptViaSecureClick(button)
     ChatEdit_SendText(eb, 0)
 end
 
-local function tryAcceptRoleCheck(tries)
+-- `seen` tracks whether the popup has ever been visible during this run. We may
+-- fire before Blizzard lays the popup out (handler order for LFG_ROLE_CHECK_SHOW
+-- isn't guaranteed), so an invisible button early on means "not ready yet" — keep
+-- polling. Once we've seen it and it's gone, the accept went through and we stop.
+local function tryAcceptRoleCheck(tries, seen)
     local btn = LFDRoleCheckPopupAcceptButton
-    -- Popup gone → our accept registered (or it was cancelled). Done.
-    if not (btn and btn:IsVisible()) then return end
-
-    AcceptViaSecureClick(btn)
+    if btn and btn:IsVisible() then
+        AcceptViaSecureClick(btn)
+        seen = true
+    elseif seen then
+        return  -- was visible, now gone → accepted/closed. Done.
+    end
 
     if tries >= ACCEPT_MAX_TRIES then return end
-    C_Timer.After(ACCEPT_RETRY_INTERVAL, function() tryAcceptRoleCheck(tries + 1) end)
+    C_Timer.After(ACCEPT_RETRY_INTERVAL, function() tryAcceptRoleCheck(tries + 1, seen) end)
 end
 
 function RM.AutoAcceptRoleCheck()
     if not SmartLFG.DB.Get("autoAccept") then return end
-    tryAcceptRoleCheck(0)
+    tryAcceptRoleCheck(0, false)
 end

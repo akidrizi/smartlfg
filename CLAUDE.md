@@ -168,9 +168,10 @@ inside the hardware-click event** so the protected `ApplyToGroup` is allowed. We
   chat editbox (`DEFAULT_CHAT_FRAME.editBox`) — a standalone `ChatFrameEditBoxTemplate`
   errors on load (no backing `chatFrame`); we only hijack it while it's hidden so a
   mid-typed message is never clobbered, falling back to a direct click otherwise. A
-  self-terminating retry (every 0.1s, up to ~1s, stops once the popup is no longer
-  visible) covers any residual miss. Role checks always complete server-side (no
-  stacking).
+  self-terminating poll (every 0.1s, up to ~1s) waits for the popup to appear — handler
+  order for `LFG_ROLE_CHECK_SHOW` isn't guaranteed, so we may fire before Blizzard lays
+  it out — clicks it, and stops once it's been seen and is gone. Role checks always
+  complete server-side (no stacking).
 - **LFD (dungeon-finder) hooking is still present** (`FH.HookLFD`, `RoleManager.SignUp`
   via `LFGTeleport`). The product direction is Premade-only; removing LFD is pending.
 
