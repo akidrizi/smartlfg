@@ -167,18 +167,11 @@ inside the hardware-click event** so the protected `ApplyToGroup` is allowed. We
   secure code path, laundering the taint. The command must go through a real
   chat editbox (`DEFAULT_CHAT_FRAME.editBox`) — a standalone `ChatFrameEditBoxTemplate`
   errors on load (no backing `chatFrame`); we only hijack it while it's hidden so a
-  mid-typed message is never clobbered, falling back to a direct click otherwise. We
-  **hook the accept button's `OnShow`** (installed lazily; `LFG_ROLE_CHECK_SHOW` only
-  bootstraps the install and accepts the first popup once) and fire a **single** deferred
-  `/click` — no polling/retry loop. This mirrors the lowest-footprint community pattern
-  (`AutomaticRoleCheck`): minimising how often our insecure code touches the protected
-  popup is the only taint lever we control, and a smaller footprint keeps the player's own
-  manual clicks clean longer once cumulative session taint defeats auto-accept (resets on
-  `/reload`). **Never hook the accept button's click-time scripts** (`OnClick`/
-  `OnMouseDown`) — that insecure handler runs inside the player's hardware click and taints
-  it, so a manual accept then needs several presses (regression, reverted in `9408ec6`).
-  `OnShow` is safe because it runs when the popup appears, not during a click. Role checks
-  always complete server-side (no stacking).
+  mid-typed message is never clobbered, falling back to a direct click otherwise. A
+  self-terminating poll (every 0.1s, up to ~1s) waits for the popup to appear — handler
+  order for `LFG_ROLE_CHECK_SHOW` isn't guaranteed, so we may fire before Blizzard lays
+  it out — clicks it, and stops once it's been seen and is gone. Role checks always
+  complete server-side (no stacking).
 - **LFD (dungeon-finder) hooking is still present** (`FH.HookLFD`, `RoleManager.SignUp`
   via `LFGTeleport`). The product direction is Premade-only; removing LFD is pending.
 

@@ -83,27 +83,27 @@ function RM.SignUp()
 end
 
 -- ── Auto-accept role check ──────────────────────────────────────────────────
--- A direct `LFDRoleCheckPopupAcceptButton:Click()` from addon code taints the
--- protected accept and it's intermittently dropped (calling CompleteLFGRoleCheck
--- directly was worse). So we "launder" the click through the secure `/click` chat
--- command: routing it via the chat command handler runs the click inside
--- Blizzard's secure code path, not our tainted one.
+-- A direct `LFDRoleCheckPopupAcceptButton:Click()` from this (non-hardware)
+-- event path intermittently gets swallowed: our addon code taints the click and
+-- the protected accept is silently dropped (tracing showed ~1 in 9 missed, and
+-- calling CompleteLFGRoleCheck directly was worse — heavy taint). The fix is to
+-- "launder" the click through the secure `/click` chat command: routing it via
+-- the chat command handler runs the click inside Blizzard's secure code path,
+-- not our tainted one, so the protected accept goes through cleanly.
 --
--- Footprint matters: every time our insecure code touches the protected popup it
--- risks leaving taint that eventually (after many checks in a session) defeats
--- both auto-accept AND the player's own manual clicks (resets on /reload). So we
--- follow the lowest-footprint community pattern (cf. AutomaticRoleCheck): hook
--- the accept button's OnShow and fire ONE `/click` — no polling/retry loop.
--- OnShow runs when the popup appears (not during a click), so it never taints the
--- player's manual click. Accepts for any leader (friends gate removed in overhaul).
-
 -- The command must go through a real, fully-initialized chat editbox
 -- (DEFAULT_CHAT_FRAME.editBox); a standalone ChatFrameEditBoxTemplate errors on
--- load (no backing chatFrame). We only hijack it while hidden (idle) so a
--- mid-typed message isn't clobbered, else fall back to a best-effort click.
+-- load because it has no backing chatFrame. To avoid clobbering a message the
+-- player is mid-typing, we only hijack the editbox when it's hidden (idle); if
+-- it's open we fall back to a best-effort direct click. Accepts for any leader
+-- (the friends-list gate was removed in the overhaul).
+local ACCEPT_RETRY_INTERVAL = 0.1   -- seconds between attempts
+local ACCEPT_MAX_TRIES      = 10    -- ~1s total
+
 local function AcceptViaSecureClick(button)
     local eb = DEFAULT_CHAT_FRAME and DEFAULT_CHAT_FRAME.editBox
     if not eb or eb:IsShown() then
+        -- Editbox busy (player typing) or unavailable: don't steal it.
         if button:IsEnabled() then button:Click() end
         return
     end
@@ -111,36 +111,24 @@ local function AcceptViaSecureClick(button)
     ChatEdit_SendText(eb, 0)
 end
 
-local function AcceptCurrentRoleCheck()
-    -- Defer a frame so the popup is laid out / the button enabled.
-    C_Timer.After(0, function()
-        if not SmartLFG.DB.Get("enabled") or not SmartLFG.DB.Get("autoAccept") then return end
-        local btn = LFDRoleCheckPopupAcceptButton
-        if btn and btn:IsVisible() then AcceptViaSecureClick(btn) end
-    end)
-end
-
--- Install the OnShow hook once, lazily (the popup may live in a lazy-loaded
--- Blizzard addon). Returns true only on the call that actually installs it.
-local onShowHooked = false
-local function EnsureOnShowHook()
-    if onShowHooked then return false end
+-- `seen` tracks whether the popup has ever been visible during this run. We may
+-- fire before Blizzard lays the popup out (handler order for LFG_ROLE_CHECK_SHOW
+-- isn't guaranteed), so an invisible button early on means "not ready yet" — keep
+-- polling. Once we've seen it and it's gone, the accept went through and we stop.
+local function tryAcceptRoleCheck(tries, seen)
     local btn = LFDRoleCheckPopupAcceptButton
-    if not (btn and btn.HookScript) then return false end
-    onShowHooked = true
-    btn:HookScript("OnShow", function()
-        if not SmartLFG.DB.Get("enabled") or not SmartLFG.DB.Get("autoAccept") then return end
-        AcceptCurrentRoleCheck()
-    end)
-    return true
+    if btn and btn:IsVisible() then
+        AcceptViaSecureClick(btn)
+        seen = true
+    elseif seen then
+        return  -- was visible, now gone → accepted/closed. Done.
+    end
+
+    if tries >= ACCEPT_MAX_TRIES then return end
+    C_Timer.After(ACCEPT_RETRY_INTERVAL, function() tryAcceptRoleCheck(tries + 1, seen) end)
 end
 
 function RM.AutoAcceptRoleCheck()
     if not SmartLFG.DB.Get("autoAccept") then return end
-    -- Once the OnShow hook exists it handles every popup; the event only needs to
-    -- install it. The install is too late for the popup that just appeared, so on
-    -- that first install we accept the current one directly (single attempt).
-    if EnsureOnShowHook() then
-        AcceptCurrentRoleCheck()
-    end
+    tryAcceptRoleCheck(0, false)
 end
