@@ -30,7 +30,6 @@ globals = {
     -- LFD / queue API
     "GetLFGRoles",
     "SetLFGRoles",
-    "CompleteLFGRoleCheck",
     "LFDRoleCheckPopupAcceptButton",
     "LFGTeleport",
     "GetLFGMode",

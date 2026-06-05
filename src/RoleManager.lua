@@ -83,16 +83,13 @@ function RM.SignUp()
 end
 
 -- ── Auto-accept role check ──────────────────────────────────────────────────
--- Tracing showed that a simulated button click fired from this (non-hardware)
--- event path intermittently gets swallowed — even retried for ~1s — while a
--- single real click always works. That's the accept button's protected click
--- path refusing addon-driven `:Click()`. So we call the underlying API
--- (`CompleteLFGRoleCheck(true)`, the same function the button's handler calls)
--- directly, which isn't gated by the button's protected click. The button click
--- stays as a fallback, and we still retry until the popup is no longer visible —
--- which reliably means the accept went through — or we hit the attempt cap.
--- Both paths are idempotent no-ops once accepted, so the loop self-terminates.
--- Accepts for any leader (the friends-list gate was removed in the overhaul).
+-- A single click fired at LFG_ROLE_CHECK_SHOW occasionally doesn't register
+-- (the popup is laid out but the click lands a frame too early), leaving the
+-- native prompt up. So we retry: re-click every interval until the popup is no
+-- longer visible — which reliably means our accept went through — or we hit the
+-- attempt cap. Clicking an already-accepted popup is a harmless no-op, and the
+-- visibility check makes this self-terminating. Accepts for any leader (the
+-- friends-list gate was removed in the overhaul).
 local ACCEPT_RETRY_INTERVAL = 0.1   -- seconds between attempts
 local ACCEPT_MAX_TRIES      = 10    -- ~1s total
 
@@ -101,10 +98,7 @@ local function tryAcceptRoleCheck(tries)
     -- Popup gone → our accept registered (or it was cancelled). Done.
     if not (btn and btn:IsVisible()) then return end
 
-    -- Prefer the API call; fall back to the button click if it's unavailable
-    -- or errors (e.g. if the function is ever protected on a given client).
-    local ok = CompleteLFGRoleCheck and pcall(CompleteLFGRoleCheck, true)
-    if not ok and btn:IsEnabled() then btn:Click() end
+    if btn:IsEnabled() then btn:Click() end
 
     if tries >= ACCEPT_MAX_TRIES then return end
     C_Timer.After(ACCEPT_RETRY_INTERVAL, function() tryAcceptRoleCheck(tries + 1) end)
