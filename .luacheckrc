@@ -31,6 +31,7 @@ globals = {
     "GetLFGRoles",
     "SetLFGRoles",
     "LFDRoleCheckPopupAcceptButton",
+    "ChatEdit_SendText",
     "LFGTeleport",
     "GetLFGMode",
     "LE_LFG_CATEGORY_LFD",

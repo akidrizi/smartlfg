@@ -83,22 +83,36 @@ function RM.SignUp()
 end
 
 -- ── Auto-accept role check ──────────────────────────────────────────────────
--- A single click fired at LFG_ROLE_CHECK_SHOW occasionally doesn't register
--- (the popup is laid out but the click lands a frame too early), leaving the
--- native prompt up. So we retry: re-click every interval until the popup is no
--- longer visible — which reliably means our accept went through — or we hit the
--- attempt cap. Clicking an already-accepted popup is a harmless no-op, and the
--- visibility check makes this self-terminating. Accepts for any leader (the
--- friends-list gate was removed in the overhaul).
+-- A direct `LFDRoleCheckPopupAcceptButton:Click()` from this (non-hardware)
+-- event path intermittently gets swallowed: our addon code taints the click and
+-- the protected accept is silently dropped (tracing showed ~1 in 9 missed, and
+-- calling CompleteLFGRoleCheck directly was worse — heavy taint). The fix is to
+-- "launder" the click through the secure `/click` chat command: routing it via
+-- the chat command handler runs the click inside Blizzard's secure code path,
+-- not our tainted one, so the protected accept goes through cleanly.
+--
+-- We send the command through our own hidden editbox (not DEFAULT_CHAT_FRAME's)
+-- so we never clobber a message the player is mid-typing. Accepts for any leader
+-- (the friends-list gate was removed in the overhaul).
 local ACCEPT_RETRY_INTERVAL = 0.1   -- seconds between attempts
 local ACCEPT_MAX_TRIES      = 10    -- ~1s total
+
+local cmdBox
+local function RunSecureClick(buttonName)
+    if not cmdBox then
+        cmdBox = CreateFrame("EditBox", "SmartLFGCmdRunner", nil, "ChatFrameEditBoxTemplate")
+        cmdBox:Hide()
+    end
+    cmdBox:SetText("/click " .. buttonName)
+    ChatEdit_SendText(cmdBox, 0)
+end
 
 local function tryAcceptRoleCheck(tries)
     local btn = LFDRoleCheckPopupAcceptButton
     -- Popup gone → our accept registered (or it was cancelled). Done.
     if not (btn and btn:IsVisible()) then return end
 
-    if btn:IsEnabled() then btn:Click() end
+    RunSecureClick("LFDRoleCheckPopupAcceptButton")
 
     if tries >= ACCEPT_MAX_TRIES then return end
     C_Timer.After(ACCEPT_RETRY_INTERVAL, function() tryAcceptRoleCheck(tries + 1) end)
