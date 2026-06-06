@@ -22,16 +22,20 @@ function RM.GetNote()     return noteText end
 function RM.SetNote(text) noteText = text or "" end
 
 -- ── First-run role pre-selection ────────────────────────────────────────────
--- The very first time SmartLFG sees a character, pre-tick the role of its
--- current spec so sign-up works out of the box. Runs once (guarded by the
--- per-character `roleInitialized` DB flag) and never overrides a role the
--- player already has selected, so manual choices are always respected.
+-- The very first time SmartLFG sees a character, seed the explicit DB selection
+-- (`selectedRoles`) so sign-up works out of the box. Runs once (guarded by the
+-- per-character `roleInitialized` DB flag). If the player already had native LFG
+-- roles configured we import those (upgrading characters keep what they chose);
+-- otherwise we seed the current spec's role.
 function RM.PreselectRoleFromSpec()
     if SmartLFG.DB.Get("roleInitialized") then return end
 
-    -- Already has a native LFG role set: nothing to seed, just mark it done.
-    if SmartLFG.HasLFDRoleSelected() then
+    -- Import an existing native LFG role setup as the explicit selection.
+    local native = SmartLFG.GetNativeRoles()
+    if next(native) then
+        SmartLFG.DB.Set("selectedRoles", native)
         SmartLFG.DB.Set("roleInitialized", true)
+        SmartLFG.Options.Refresh()
         return
     end
 
@@ -40,19 +44,20 @@ function RM.PreselectRoleFromSpec()
     local role = SmartLFG.GetCurrentSpecRole()
     if not role then return end
 
-    SmartLFG.SetRole(role)
+    SmartLFG.DB.Set("selectedRoles", { [role] = true })
     SmartLFG.DB.Set("roleInitialized", true)
     SmartLFG.Options.Refresh()
 end
 
 -- ── Sign up to a Premade group ──────────────────────────────────────────────
 -- Opens the application dialog. FrameHook's OnShow hook either auto-submits
--- (plain double-click) or holds it open for a note (note mode). The role comes
--- from the player's native LFG roles (set via the /slfg options panel), so we
--- never touch the secure dialog here.
+-- (plain double-click) or holds it open for a note (note mode). We resolve and
+-- write the native LFG roles first (explicit selection, else solo/group
+-- fallback — see ResolveSignUpRoles); the secure dialog inherits them natively,
+-- so we never touch it here.
 function RM.ApplyToGroup(withNote)
     if not SmartLFG.IsPlayerSoloOrLeader() then return end
-    if not SmartLFG.HasLFDRoleSelected() then
+    if not SmartLFG.ApplyResolvedRoles() then
         SmartLFG.Warn(SmartLFG.L.ROLE_REQUIRED)
         return
     end
@@ -77,7 +82,7 @@ end
 -- TODO(rework A): remove once SmartLFG is Premade-only.
 function RM.SignUp()
     if not SmartLFG.IsPlayerSoloOrLeader() then return end
-    if not SmartLFG.HasLFDRoleSelected() then return end
+    if not SmartLFG.ApplyResolvedRoles() then return end
     if GetLFGMode(LE_LFG_CATEGORY_LFD) then return end
     LFGTeleport(false)
 end

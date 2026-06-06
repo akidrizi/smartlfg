@@ -4,8 +4,9 @@ set -euo pipefail
 DESTINATION="/c/Program Files (x86)/World of Warcraft/_retail_/Interface/AddOns/SmartLFG"
 SOURCE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
-# Deploy only what the addon needs at runtime: the .toc, src/, and media/icon.
-# Docs, dev assets (screenshots/logo), and tooling are stripped.
+# Deploy only what the addon needs at runtime: the .toc, src/, media/icon (the
+# AddOns-list icon) and media/minimap_64.png (the minimap button icon).
+# Docs, dev assets (screenshots/logo/extra icon sizes), and tooling are stripped.
 EXCLUDES=(
     '.git'
     '.github'
@@ -17,6 +18,10 @@ EXCLUDES=(
     'media/role-dungeon-finder.png'
     'media/tooltip-group-finder.png'
     'media/tooltip-only.png'
+    'media/comparison_minimap.png'
+    'media/minimap_16.png'
+    'media/minimap_32.png'
+    'media/minimap_preview256.png'
     '.editorconfig'
     '.gitignore'
     '.luacheckrc'

@@ -34,13 +34,18 @@ local L_enUS = {
     OPTIONS_VERSION      = "Version %s",
     OPTIONS_ENABLE       = "Enable SmartLFG",
     OPTIONS_ENABLE_SHORT = "Enable",
-    OPTIONS_ENABLE_DESC  = "Master switch for all SmartLFG features. Toggle anytime with /slfg on or /slfg off.",
+    -- %s placeholders are the chat commands; the caller colors them (Options.lua).
+    OPTIONS_ENABLE_DESC  = "Master switch for all SmartLFG features.\nToggle anytime with %s or %s.",
     OPTIONS_QUICKSIGNUP      = "Double-click sign-up",
     OPTIONS_QUICKSIGNUP_DESC = "Double-click a Premade Groups listing to sign up, Shift + Double-click to add a note," ..
                                " and show the sign-up hint on listing tooltips.",
     OPTIONS_AUTOACCEPT       = "Auto-accept role",
     OPTIONS_AUTOACCEPT_DESC  = "Automatically accept the role check popup when a group leader queues your group.",
     OPTIONS_ROLE         = "Sign-up roles",
+    -- Roles-section fallback tooltip. _TITLE is the white first line; the second
+    -- line's %s are the spec's role icon and the class-colored spec name.
+    OPTIONS_ROLE_INFO_TITLE = "None Selected",
+    OPTIONS_ROLE_INFO       = "Uses role from Current Specialization (%s %s).",
     OPTIONS_SECTION      = "Options",
     OPTIONS_TIP          = "Tip: %s",
     OPTIONS_TIP_NOTE     = "Shift + Double-click on a listing to add a note.",

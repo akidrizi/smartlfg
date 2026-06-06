@@ -22,7 +22,6 @@ local PAD          = 16     -- content margin from the panel edges
 local ICON_SIZE    = 56     -- role button (ring) edge, in pixels
 local ICON_INNER   = 32     -- role icon inside the ring
 local ROLE_SPACING = 92     -- centre-to-centre distance between role buttons
-local COL2_X       = 198    -- left edge of the second options column
 
 -- Vertical layout: offsets from the dialog's top edge (negative = downward).
 local ROLE_HEADER_Y = -62
@@ -49,6 +48,7 @@ local function CreateSectionHeader(text, yOffset)
     fs:SetPoint("TOPLEFT", panel, "TOPLEFT", PAD, yOffset)
     fs:SetText(text:upper())
     fs:SetTextColor(1, 1, 1)
+    return fs
 end
 
 -- ── One labelled checkbox bound to a DB key ─────────────────────────────────
@@ -163,9 +163,26 @@ local function BuildPanel()
     close:SetSize(22, 22)
     close:SetPoint("TOPRIGHT", -5, -5)
 
-    -- Header: name + version, top-left.
+    -- Header: branded icon + name, with version beneath the name (top-left).
+    -- Easter egg: the icon is a button — clicking it toggles the Group Finder,
+    -- exactly like the micro-menu button or the default "I" keybind.
+    local logoButton = CreateFrame("Button", nil, panel)
+    logoButton:SetSize(36, 36)
+    logoButton:SetPoint("TOPLEFT", panel, "TOPLEFT", PAD, -12)
+    logoButton:RegisterForClicks("LeftButtonUp")
+    logoButton:SetScript("OnClick", function()
+        if ToggleLFDParentFrame then ToggleLFDParentFrame() end
+    end)
+    logoButton:SetScript("OnEnter", function(self) self:SetAlpha(0.8) end)
+    logoButton:SetScript("OnLeave", function(self) self:SetAlpha(1) end)
+
+    local logo = logoButton:CreateTexture(nil, "ARTWORK")
+    logo:SetAllPoints()
+    logo:SetTexture("Interface\\AddOns\\SmartLFG\\media\\minimap_64.png")
+    logo:SetMask("Interface\\CharacterFrame\\TempPortraitAlphaMask")
+
     local title = panel:CreateFontString(nil, "ARTWORK", "GameFontNormalLarge")
-    title:SetPoint("TOPLEFT", panel, "TOPLEFT", PAD, -14)
+    title:SetPoint("TOPLEFT", logoButton, "TOPRIGHT", 8, -3)
     title:SetText(C.ADDON .. addonName .. C.RESET)
 
     local version = panel:CreateFontString(nil, "ARTWORK", "GameFontHighlightSmall")
@@ -174,14 +191,44 @@ local function BuildPanel()
     version:SetTextColor(0.6, 0.6, 0.6)
 
     -- Master enable switch on the version row, top-right: "[ ] Enable".
+    -- The chat commands in the tooltip are highlighted in the addon's cyan.
+    local enableDesc = string.format(L.OPTIONS_ENABLE_DESC,
+        C.ADDON .. "/slfg on" .. C.RESET, C.ADDON .. "/slfg off" .. C.RESET)
     enabledCheck = CreateCheck(panel, "SmartLFGEnabledCheck",
-        "enabled", L.OPTIONS_ENABLE_SHORT, L.OPTIONS_ENABLE, L.OPTIONS_ENABLE_DESC)
+        "enabled", L.OPTIONS_ENABLE_SHORT, L.OPTIONS_ENABLE, enableDesc)
     -- +2 extra right margin so the label doesn't crowd the border.
     enabledCheck:SetPoint("TOPRIGHT", panel, "TOPRIGHT",
         -(PAD + 2 + enabledCheck.label:GetStringWidth() + 4), -28)
 
-    -- Roles section.
-    CreateSectionHeader(L.OPTIONS_ROLE, ROLE_HEADER_Y)
+    -- Roles section. A turn-in icon beside the header explains the
+    -- nothing-selected fallback on hover (uses the current spec's role).
+    local roleHeader = CreateSectionHeader(L.OPTIONS_ROLE, ROLE_HEADER_Y)
+
+    local roleInfo = CreateFrame("Button", nil, panel)
+    roleInfo:SetSize(13, 13)
+    roleInfo:SetPoint("LEFT", roleHeader, "RIGHT", 2, 0)
+    local roleInfoIcon = roleInfo:CreateTexture(nil, "ARTWORK")
+    roleInfoIcon:SetAllPoints()
+    roleInfoIcon:SetTexture("Interface\\GossipFrame\\ActiveQuestIcon")
+    roleInfo:SetScript("OnEnter", function(self)
+        local role     = SmartLFG.GetCurrentSpecRole()
+        local atlas    = role and SmartLFG.ROLE_ATLAS[role]
+        local icon     = atlas and CreateAtlasMarkup(atlas, 16, 16) or ""
+        local specName = SmartLFG.GetCurrentSpecName() or ""
+
+        -- Tint the spec name with the player's class color.
+        local _, classFile = UnitClass("player")
+        local color = (classFile and C_ClassColor and C_ClassColor.GetClassColor(classFile))
+            or (classFile and RAID_CLASS_COLORS and RAID_CLASS_COLORS[classFile])
+        local coloredName = color and color:WrapTextInColorCode(specName) or specName
+
+        GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
+        GameTooltip:AddLine(L.OPTIONS_ROLE_INFO_TITLE, 1, 1, 1)
+        -- Classic tooltip yellow; the spec name keeps its class color (|c…|r).
+        GameTooltip:AddLine(string.format(L.OPTIONS_ROLE_INFO, icon, coloredName), 1, 0.82, 0, true)
+        GameTooltip:Show()
+    end)
+    roleInfo:SetScript("OnLeave", function() GameTooltip:Hide() end)
 
     local offset = { -ROLE_SPACING, 0, ROLE_SPACING }
     for i, role in ipairs(SmartLFG.ROLES) do
@@ -197,8 +244,17 @@ local function BuildPanel()
         "quickSignUp", L.OPTIONS_QUICKSIGNUP, L.OPTIONS_QUICKSIGNUP, L.OPTIONS_QUICKSIGNUP_DESC)
     autoAcceptCheck = CreateCheck(panel, "SmartLFGAutoAcceptCheck",
         "autoAccept", L.OPTIONS_AUTOACCEPT, L.OPTIONS_AUTOACCEPT, L.OPTIONS_AUTOACCEPT_DESC)
-    quickSignUpCheck:SetPoint("TOPLEFT", panel, "TOPLEFT", PAD + 4, OPT_Y)
-    autoAcceptCheck:SetPoint("TOPLEFT", panel, "TOPLEFT", COL2_X, OPT_Y)
+
+    -- Center each toggle (checkbox + label) within its half of the content area,
+    -- so the pair reads as balanced rather than pinned to fixed columns.
+    local halfW = (PANEL_W - 2 * PAD) / 2
+    local function PlaceToggle(check, column)
+        local centerX = PAD + halfW * (column - 0.5)
+        local blockW  = check:GetWidth() + 4 + check.label:GetStringWidth()
+        check:SetPoint("TOPLEFT", panel, "TOPLEFT", centerX - blockW / 2, OPT_Y)
+    end
+    PlaceToggle(quickSignUpCheck, 1)
+    PlaceToggle(autoAcceptCheck, 2)
 
     -- Bottom tip (reuses the tooltip-hint string), prefixed with a small gold
     -- diamond. Greyed unless double-click sign-up is active — see O.Refresh.

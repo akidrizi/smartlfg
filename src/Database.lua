@@ -1,6 +1,6 @@
 local _, SmartLFG = ...
 
-local SCHEMA_VERSION = 8
+local SCHEMA_VERSION = 9
 
 local DEFAULTS = {
     schemaVersion   = SCHEMA_VERSION,
@@ -18,14 +18,25 @@ SmartLFG.DB = {}
 function SmartLFG.DB.Init()
     SmartLFGDB = SmartLFGDB or {}
 
-    if (SmartLFGDB.schemaVersion or 0) < SCHEMA_VERSION then
+    local from = SmartLFGDB.schemaVersion or 0
+    if from < SCHEMA_VERSION then
         for k, v in pairs(DEFAULTS) do
             if SmartLFGDB[k] == nil then
                 SmartLFGDB[k] = v
             end
         end
 
-        -- Roles now live in the native LFG role state, not the DB.
+        -- v9: the explicit role selection now lives in the DB (`selectedRoles`,
+        -- a set of role tokens), not the native LFG state. Seed the store and
+        -- re-run first-run pre-selection once so existing characters import the
+        -- roles they had configured. (Kept out of DEFAULTS to avoid sharing one
+        -- table reference across keys.)
+        if from < 9 then
+            SmartLFGDB.selectedRoles   = SmartLFGDB.selectedRoles or {}
+            SmartLFGDB.roleInitialized = false
+        end
+
+        -- Legacy single-role key (pre-v8); never reinstated.
         SmartLFGDB.selectedRole  = nil
         SmartLFGDB.schemaVersion = SCHEMA_VERSION
     end

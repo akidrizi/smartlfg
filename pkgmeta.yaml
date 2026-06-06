@@ -13,6 +13,10 @@ ignore:
   - media/role-dungeon-finder.png
   - media/tooltip-group-finder.png
   - media/tooltip-only.png
+  - media/comparison_minimap.png
+  - media/minimap_16.png
+  - media/minimap_32.png
+  - media/minimap_preview256.png
   - .editorconfig
   - .gitignore
   - .luacheckrc

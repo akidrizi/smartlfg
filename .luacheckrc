@@ -25,6 +25,7 @@ globals = {
     -- Unit / group queries
     "UnitIsGroupLeader",
     "IsInGroup",
+    "UnitClass",
     "LE_PARTY_CATEGORY_HOME",
 
     -- LFD / queue API
@@ -49,11 +50,14 @@ globals = {
     "GameFontHighlightSmall",
     "PlaySound",
     "SOUNDKIT",
+    "CreateAtlasMarkup",
+    "RAID_CLASS_COLORS",
 
     -- C_* namespaces
     "C_LFGList",
     "C_AddOns",
     "C_Timer",
+    "C_ClassColor",
 
     -- ScrollBox (WoW 10.x+ scroll container used by Blizzard_LFGList)
     "BaseScrollBoxEvents",
@@ -76,6 +80,7 @@ globals = {
     "LFGListFrame",
     "LFGListApplicationDialog",
     "LFGListSearchPanel_SignUp",
+    "ToggleLFDParentFrame",
 
     -- Slash command registration
     "SLASH_SMARTLFG1",

@@ -6,7 +6,7 @@ local _, SmartLFG = ...
 SmartLFG.Minimap = {}
 local M = SmartLFG.Minimap
 
-local MINIMAP_ICON = "Interface\\AddOns\\SmartLFG\\media\\icon"
+local MINIMAP_ICON = "Interface\\AddOns\\SmartLFG\\media\\minimap_64.png"
 
 local button       -- the minimap Button frame
 
@@ -81,7 +81,7 @@ function M.Create()
     local icon = button:CreateTexture(nil, "BACKGROUND")
     icon:SetSize(20, 20)
     icon:SetTexture(MINIMAP_ICON)
-    icon:SetPoint("CENTER", button, "CENTER", -1, 1)
+    icon:SetPoint("CENTER", button, "CENTER", 0, 1)
     icon:SetMask("Interface\\CharacterFrame\\TempPortraitAlphaMask")
 
     local border = button:CreateTexture(nil, "OVERLAY")
