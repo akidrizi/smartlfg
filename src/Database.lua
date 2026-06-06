@@ -1,6 +1,6 @@
 local _, SmartLFG = ...
 
-local SCHEMA_VERSION = 7
+local SCHEMA_VERSION = 8
 
 local DEFAULTS = {
     schemaVersion   = SCHEMA_VERSION,
@@ -9,6 +9,8 @@ local DEFAULTS = {
     quickSignUp     = true,
     -- One-shot guard for first-run role pre-selection (see RoleManager).
     roleInitialized = false,
+    -- Minimap button position, in degrees around the minimap ring.
+    minimapAngle    = 200,
 }
 
 SmartLFG.DB = {}

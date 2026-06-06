@@ -66,6 +66,10 @@ globals = {
     "GetTime",
     "GetLocale",
     "IsShiftKeyDown",
+    "Minimap",
+    "GetCursorPosition",
+    "GetMinimapShape",
+    "UISpecialFrames",
 
     -- LFG frame globals
     "LFGParentFrame",

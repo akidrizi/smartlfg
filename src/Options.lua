@@ -1,58 +1,103 @@
 local addonName, SmartLFG = ...
 
-local Settings                          = _G.Settings
-local InterfaceOptions_AddCategory      = _G.InterfaceOptions_AddCategory
-local InterfaceOptionsFrame_OpenToCategory = _G.InterfaceOptionsFrame_OpenToCategory
+local Settings                     = _G.Settings
+local InterfaceOptions_AddCategory = _G.InterfaceOptions_AddCategory
 
 SmartLFG.Options = {}
 local O = SmartLFG.Options
 
-local panel            -- the canvas frame
-local categoryID       -- modern Settings category id (for OpenToCategory)
+local panel            -- the standalone dialog frame (the real UI)
+local stub             -- tiny Settings → AddOns placeholder that opens the dialog
 local enabledCheck     -- the master enable checkbox
 local quickSignUpCheck -- toggles double-click sign-up + tooltip hint
 local autoAcceptCheck  -- toggles auto-accept of role checks
+local noteTip          -- bottom "Tip: …" line (greyed unless double-click sign-up is on)
+local tipDiamond       -- the gold diamond preceding the tip
 local roleButtons = {} -- role token -> button
 
+-- ── Layout ──────────────────────────────────────────────────────────────────
+local PANEL_W      = 380
+local PANEL_H      = 260
+local PAD          = 16     -- content margin from the panel edges
+local ICON_SIZE    = 56     -- role button (ring) edge, in pixels
+local ICON_INNER   = 32     -- role icon inside the ring
+local ROLE_SPACING = 92     -- centre-to-centre distance between role buttons
+local COL2_X       = 198    -- left edge of the second options column
+
+-- Vertical layout: offsets from the dialog's top edge (negative = downward).
+local ROLE_HEADER_Y = -62
+local ROLE_Y        = -82
+local OPT_HEADER_Y  = -170
+local OPT_Y         = -188
+local TIP_Y         = -230
+
+-- ── Shared helpers ──────────────────────────────────────────────────────────
+-- Show a title + wrapped description in a tooltip while hovering a frame.
+local function WireTooltip(frame, title, text)
+    frame:SetScript("OnEnter", function(self)
+        GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
+        GameTooltip:SetText(title, 1, 1, 1)
+        if text then GameTooltip:AddLine(text, nil, nil, nil, true) end
+        GameTooltip:Show()
+    end)
+    frame:SetScript("OnLeave", function() GameTooltip:Hide() end)
+end
+
+-- A white small-caps section header, left-aligned at the given Y.
+local function CreateSectionHeader(text, yOffset)
+    local fs = panel:CreateFontString(nil, "ARTWORK", "GameFontNormal")
+    fs:SetPoint("TOPLEFT", panel, "TOPLEFT", PAD, yOffset)
+    fs:SetText(text:upper())
+    fs:SetTextColor(1, 1, 1)
+end
+
 -- ── One labelled checkbox bound to a DB key ─────────────────────────────────
--- Returns the check (so callers can read it in Refresh) and its description
--- font string (so the next widget can anchor below it).
-local function CreateCheck(parent, name, dbKey, labelText, descText, anchorBelow)
+-- Help text lives in a hover tooltip (no inline description). Returns the
+-- check (with its label on `check.label`); the caller positions it.
+local function CreateCheck(parent, name, dbKey, labelText, tipTitle, tipText)
     local check = CreateFrame("CheckButton", name, parent, "UICheckButtonTemplate")
-    check:SetPoint("TOPLEFT", anchorBelow, "BOTTOMLEFT", 0, -16)
+    check:SetSize(24, 24)
 
     local label = check:CreateFontString(nil, "ARTWORK", "GameFontNormal")
     label:SetPoint("LEFT", check, "RIGHT", 4, 0)
     label:SetText(labelText)
+    check.label = label
 
-    local desc = parent:CreateFontString(nil, "ARTWORK", "GameFontHighlightSmall")
-    desc:SetPoint("TOPLEFT", check, "BOTTOMLEFT", 4, -4)
-    desc:SetWidth(520)
-    desc:SetJustifyH("LEFT")
-    desc:SetText(descText)
+    -- Extend the hover/click area over the label text too.
+    check:SetHitRectInsets(0, -(label:GetStringWidth() + 8), 0, 0)
 
     check:SetScript("OnClick", function(self)
         SmartLFG.DB.Set(dbKey, self:GetChecked() and true or false)
         O.Refresh()
     end)
+    WireTooltip(check, tipTitle, tipText)
 
-    return check, desc
+    return check, label
 end
 
 -- ── One role icon button ────────────────────────────────────────────────────
--- A single building block: a clickable native role icon. Selecting it stores
+-- A circular role icon inside a ring, with a label beneath. Selecting it stores
 -- the role; invalid-for-class roles are desaturated and non-interactive.
 local function CreateRoleButton(parent, role)
     local btn = CreateFrame("Button", "SmartLFGRole" .. role, parent)
-    btn:SetSize(40, 40)
+    btn:SetSize(ICON_SIZE, ICON_SIZE)
     btn.role = role
 
+    -- Round metal ring framing the icon.
+    local ring = btn:CreateTexture(nil, "BACKGROUND")
+    ring:SetAllPoints()
+    ring:SetTexture("Interface\\Buttons\\UI-EmptySlot")
+    btn.ring = ring
+
     local icon = btn:CreateTexture(nil, "ARTWORK")
-    icon:SetAllPoints()
+    icon:SetSize(ICON_INNER, ICON_INNER)
+    icon:SetPoint("CENTER")
     icon:SetAtlas(SmartLFG.ROLE_ATLAS[role], false)
+    icon:SetSnapToPixelGrid(false)
+    icon:SetTexelSnappingBias(0)
     btn.icon = icon
 
-    -- Selection glow, shown only for the active role (managed in Refresh).
+    -- Selection glow, shown only for the active role.
     local check = btn:CreateTexture(nil, "OVERLAY")
     check:SetTexture("Interface\\Buttons\\CheckButtonHilight")
     check:SetBlendMode("ADD")
@@ -61,7 +106,10 @@ local function CreateRoleButton(parent, role)
     check:Hide()
     btn.check = check
 
-    btn:SetHighlightTexture("Interface\\Buttons\\ButtonHilight-Square", "ADD")
+    local label = parent:CreateFontString(nil, "ARTWORK", "GameFontNormal")
+    label:SetPoint("TOP", btn, "BOTTOM", 0, -5)
+    label:SetText(SmartLFG.GetRoleName(role):upper())
+    btn.label = label
 
     btn:SetScript("OnClick", function(self)
         if not SmartLFG.GetAvailableRoles()[self.role] then return end
@@ -80,69 +128,89 @@ local function CreateRoleButton(parent, role)
     return btn
 end
 
--- ── Build the panel once ────────────────────────────────────────────────────
+-- ── Build the dialog once ───────────────────────────────────────────────────
 local function BuildPanel()
     local C, L = SmartLFG.COLOR, SmartLFG.L
 
-    panel = CreateFrame("Frame", "SmartLFGOptionsPanel", UIParent)
-    panel.name = addonName
+    -- A standalone, movable window with a close (X) button — opened by /slfg
+    -- and by the minimap button, not embedded in Blizzard's Settings panel.
+    panel = CreateFrame("Frame", "SmartLFGDialog", UIParent, "BackdropTemplate")
+    panel:SetSize(PANEL_W, PANEL_H)
+    panel:SetPoint("CENTER")
+    panel:SetFrameStrata("HIGH")
+    panel:SetToplevel(true)
+    panel:SetClampedToScreen(true)
+    panel:Hide()
+    panel:SetBackdrop({
+        bgFile   = "Interface\\DialogFrame\\UI-DialogBox-Background-Dark",
+        edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border",  -- plain, no corner ornaments
+        tile = true, tileSize = 16, edgeSize = 16,
+        insets = { left = 4, right = 4, top = 4, bottom = 4 },
+    })
+    panel:SetBackdropColor(1, 1, 1, 0.75)  -- ~25% more transparent than opaque
 
+    -- Drag the window by grabbing anywhere on it.
+    panel:SetMovable(true)
+    panel:EnableMouse(true)
+    panel:RegisterForDrag("LeftButton")
+    panel:SetScript("OnDragStart", panel.StartMoving)
+    panel:SetScript("OnDragStop", panel.StopMovingOrSizing)
+
+    -- ESC closes the dialog like any other Blizzard window.
+    table.insert(UISpecialFrames, "SmartLFGDialog")
+
+    local close = CreateFrame("Button", nil, panel, "UIPanelCloseButton")
+    close:SetSize(22, 22)
+    close:SetPoint("TOPRIGHT", -5, -5)
+
+    -- Header: name + version, top-left.
     local title = panel:CreateFontString(nil, "ARTWORK", "GameFontNormalLarge")
-    title:SetPoint("TOPLEFT", 16, -16)
+    title:SetPoint("TOPLEFT", panel, "TOPLEFT", PAD, -14)
     title:SetText(C.ADDON .. addonName .. C.RESET)
 
     local version = panel:CreateFontString(nil, "ARTWORK", "GameFontHighlightSmall")
     version:SetPoint("TOPLEFT", title, "BOTTOMLEFT", 0, -4)
     version:SetText(string.format(L.OPTIONS_VERSION, SmartLFG.GetAddonVersion()))
+    version:SetTextColor(0.6, 0.6, 0.6)
 
-    -- Enable checkbox + description
-    enabledCheck = CreateFrame("CheckButton", "SmartLFGEnabledCheck", panel, "UICheckButtonTemplate")
-    enabledCheck:SetPoint("TOPLEFT", version, "BOTTOMLEFT", 0, -24)
+    -- Master enable switch on the version row, top-right: "[ ] Enable".
+    enabledCheck = CreateCheck(panel, "SmartLFGEnabledCheck",
+        "enabled", L.OPTIONS_ENABLE_SHORT, L.OPTIONS_ENABLE, L.OPTIONS_ENABLE_DESC)
+    -- +2 extra right margin so the label doesn't crowd the border.
+    enabledCheck:SetPoint("TOPRIGHT", panel, "TOPRIGHT",
+        -(PAD + 2 + enabledCheck.label:GetStringWidth() + 4), -28)
 
-    local enabledLabel = enabledCheck:CreateFontString(nil, "ARTWORK", "GameFontNormal")
-    enabledLabel:SetPoint("LEFT", enabledCheck, "RIGHT", 4, 0)
-    enabledLabel:SetText(L.OPTIONS_ENABLE)
+    -- Roles section.
+    CreateSectionHeader(L.OPTIONS_ROLE, ROLE_HEADER_Y)
 
-    local enabledDesc = panel:CreateFontString(nil, "ARTWORK", "GameFontHighlightSmall")
-    enabledDesc:SetPoint("TOPLEFT", enabledCheck, "BOTTOMLEFT", 4, -4)
-    enabledDesc:SetWidth(520)
-    enabledDesc:SetJustifyH("LEFT")
-    enabledDesc:SetText(L.OPTIONS_ENABLE_DESC)
-
-    enabledCheck:SetScript("OnClick", function(self)
-        SmartLFG.DB.Set("enabled", self:GetChecked() and true or false)
-        O.Refresh()
-    end)
-
-    -- Feature toggles
-    local quickSignUpDesc, autoAcceptDesc
-    quickSignUpCheck, quickSignUpDesc = CreateCheck(panel, "SmartLFGQuickSignUpCheck",
-        "quickSignUp", L.OPTIONS_QUICKSIGNUP, L.OPTIONS_QUICKSIGNUP_DESC, enabledDesc)
-    autoAcceptCheck, autoAcceptDesc = CreateCheck(panel, "SmartLFGAutoAcceptCheck",
-        "autoAccept", L.OPTIONS_AUTOACCEPT, L.OPTIONS_AUTOACCEPT_DESC, quickSignUpDesc)
-
-    -- Role section
-    local roleHeader = panel:CreateFontString(nil, "ARTWORK", "GameFontNormal")
-    roleHeader:SetPoint("TOPLEFT", autoAcceptDesc, "BOTTOMLEFT", -4, -28)
-    roleHeader:SetText(L.OPTIONS_ROLE)
-
-    local prev
-    for _, role in ipairs(SmartLFG.ROLES) do
+    local offset = { -ROLE_SPACING, 0, ROLE_SPACING }
+    for i, role in ipairs(SmartLFG.ROLES) do
         local btn = CreateRoleButton(panel, role)
-        if prev then
-            btn:SetPoint("LEFT", prev, "RIGHT", 14, 0)
-        else
-            btn:SetPoint("TOPLEFT", roleHeader, "BOTTOMLEFT", 0, -10)
-        end
-        prev = btn
+        btn:SetPoint("TOP", panel, "TOP", offset[i], ROLE_Y)
         roleButtons[role] = btn
     end
 
-    local roleDesc = panel:CreateFontString(nil, "ARTWORK", "GameFontHighlightSmall")
-    roleDesc:SetPoint("TOPLEFT", roleButtons[SmartLFG.ROLES[1]], "BOTTOMLEFT", 0, -10)
-    roleDesc:SetWidth(520)
-    roleDesc:SetJustifyH("LEFT")
-    roleDesc:SetText(L.OPTIONS_ROLE_DESC)
+    -- Options section: two columns of toggles.
+    CreateSectionHeader(L.OPTIONS_SECTION, OPT_HEADER_Y)
+
+    quickSignUpCheck = CreateCheck(panel, "SmartLFGQuickSignUpCheck",
+        "quickSignUp", L.OPTIONS_QUICKSIGNUP, L.OPTIONS_QUICKSIGNUP, L.OPTIONS_QUICKSIGNUP_DESC)
+    autoAcceptCheck = CreateCheck(panel, "SmartLFGAutoAcceptCheck",
+        "autoAccept", L.OPTIONS_AUTOACCEPT, L.OPTIONS_AUTOACCEPT, L.OPTIONS_AUTOACCEPT_DESC)
+    quickSignUpCheck:SetPoint("TOPLEFT", panel, "TOPLEFT", PAD + 4, OPT_Y)
+    autoAcceptCheck:SetPoint("TOPLEFT", panel, "TOPLEFT", COL2_X, OPT_Y)
+
+    -- Bottom tip (reuses the tooltip-hint string), prefixed with a small gold
+    -- diamond. Greyed unless double-click sign-up is active — see O.Refresh.
+    noteTip = panel:CreateFontString(nil, "ARTWORK", "GameFontHighlightSmall")
+    noteTip:SetPoint("TOPLEFT", panel, "TOPLEFT", PAD + 12, TIP_Y)
+    noteTip:SetText(string.format(L.OPTIONS_TIP, L.OPTIONS_TIP_NOTE))
+
+    tipDiamond = panel:CreateTexture(nil, "ARTWORK")
+    tipDiamond:SetColorTexture(1, 1, 1)
+    tipDiamond:SetSize(7, 7)
+    tipDiamond:SetRotation(math.rad(45))  -- a rotated square reads as a diamond
+    tipDiamond:SetPoint("RIGHT", noteTip, "LEFT", -5, 0)
 
     panel:SetScript("OnShow", O.Refresh)
 end
@@ -161,40 +229,103 @@ function O.Refresh()
     quickSignUpCheck:SetEnabled(enabled)
     autoAcceptCheck:SetEnabled(enabled)
 
+    -- Grey the option labels while the master switch is off.
+    local r, g, b = 0.5, 0.5, 0.5
+    if enabled then r, g, b = 1, 0.82, 0 end
+    quickSignUpCheck.label:SetTextColor(r, g, b)
+    autoAcceptCheck.label:SetTextColor(r, g, b)
+
+    -- The note tip only applies when double-click sign-up is actually running.
+    if enabled and SmartLFG.DB.Get("quickSignUp") then
+        noteTip:SetTextColor(0, 0.8, 1)
+        tipDiamond:SetVertexColor(1, 0.84, 0)
+    else
+        noteTip:SetTextColor(0.5, 0.5, 0.5)
+        tipDiamond:SetVertexColor(0.5, 0.5, 0.5)
+    end
+
     local available = SmartLFG.GetAvailableRoles()
     local selected  = SmartLFG.GetSelectedRoles()
     for role, btn in pairs(roleButtons) do
-        local valid = available[role] and true or false
-        btn.icon:SetDesaturated(not valid)
-        btn:SetAlpha(valid and 1 or 0.3)
-        btn:EnableMouse(valid)
-        btn.check:SetShown(valid and selected[role] and true or false)
+        -- A role is interactive only when the addon is enabled and the class
+        -- can perform it; otherwise it's desaturated and dimmed.
+        local active = enabled and (available[role] and true or false)
+        local isSel  = selected[role] and true or false
+        btn.icon:SetDesaturated(not active)
+        btn.ring:SetDesaturated(not active)
+        btn:SetAlpha(active and 1 or 0.4)
+        btn:EnableMouse(active)
+        btn.check:SetShown(active and isSel)
+        if not active then
+            btn.label:SetTextColor(0.5, 0.5, 0.5)
+        elseif isSel then
+            btn.label:SetTextColor(1, 0.82, 0)
+        else
+            btn.label:SetTextColor(0.8, 0.8, 0.8)
+        end
     end
+end
+
+-- ── Tiny Settings → AddOns placeholder ──────────────────────────────────────
+-- The real UI is the standalone dialog; the Blizzard Settings entry is just a
+-- centered name/version and a clickable "/slfg" that opens that dialog.
+local function BuildStub()
+    local C, L = SmartLFG.COLOR, SmartLFG.L
+
+    stub = CreateFrame("Frame", "SmartLFGStubPanel", UIParent)
+    stub.name = addonName
+
+    local title = stub:CreateFontString(nil, "ARTWORK", "GameFontNormalHuge")
+    title:SetPoint("CENTER", stub, "CENTER", 0, 40)
+    title:SetText(C.ADDON .. addonName .. C.RESET)
+
+    local version = stub:CreateFontString(nil, "ARTWORK", "GameFontHighlight")
+    version:SetPoint("TOP", title, "BOTTOM", 0, -8)
+    version:SetText(string.format(L.OPTIONS_VERSION, SmartLFG.GetAddonVersion()))
+
+    -- Clickable "/slfg" that opens the dialog.
+    local open = CreateFrame("Button", nil, stub)
+    open:SetPoint("TOP", version, "BOTTOM", 0, -20)
+    local openText = open:CreateFontString(nil, "ARTWORK", "GameFontNormalLarge")
+    openText:SetText("/slfg")
+    open:SetFontString(openText)
+    open:SetSize(openText:GetStringWidth() + 8, 28)
+    openText:SetPoint("CENTER")
+
+    open:SetScript("OnEnter", function() openText:SetTextColor(0, 0.8, 1) end)
+    open:SetScript("OnLeave", function() openText:SetTextColor(1, 0.82, 0) end)
+    open:SetScript("OnClick", function() O.Open() end)
 end
 
 -- ── Register with the in-game options UI ────────────────────────────────────
 function O.Register()
     if panel then return end
     BuildPanel()
+    BuildStub()
 
     if Settings and Settings.RegisterCanvasLayoutCategory and Settings.RegisterAddOnCategory then
-        local category = Settings.RegisterCanvasLayoutCategory(panel, addonName)
+        local category = Settings.RegisterCanvasLayoutCategory(stub, addonName)
         Settings.RegisterAddOnCategory(category)
-        categoryID = category:GetID()
     elseif InterfaceOptions_AddCategory then
-        InterfaceOptions_AddCategory(panel)
+        InterfaceOptions_AddCategory(stub)
     end
 
     O.Refresh()
 end
 
--- ── Open the panel (target of bare /slfg) ───────────────────────────────────
+-- ── Open / toggle the dialog (target of bare /slfg and the minimap button) ───
 function O.Open()
-    if Settings and Settings.OpenToCategory and categoryID then
-        Settings.OpenToCategory(categoryID)
-    elseif InterfaceOptionsFrame_OpenToCategory and panel then
-        InterfaceOptionsFrame_OpenToCategory(panel)  -- legacy double-call bug workaround
-        InterfaceOptionsFrame_OpenToCategory(panel)
-    end
+    if not panel then return end
+    panel:Show()
+    panel:Raise()
     O.Refresh()
+end
+
+function O.Toggle()
+    if not panel then return end
+    if panel:IsShown() then
+        panel:Hide()
+    else
+        O.Open()
+    end
 end

@@ -23,6 +23,7 @@ src\Core.lua
 src\Database.lua
 src\FrameHook.lua
 src\Locale.lua
+src\Minimap.lua
 src\Options.lua
 src\RoleManager.lua
 src\Util.lua

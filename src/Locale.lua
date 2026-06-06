@@ -31,21 +31,26 @@ local L_enUS = {
     ADDON_DISABLED       = "SmartLFG disabled.",
 
     -- Options panel
-    OPTIONS_VERSION      = "Version: %s",
+    OPTIONS_VERSION      = "Version %s",
     OPTIONS_ENABLE       = "Enable SmartLFG",
+    OPTIONS_ENABLE_SHORT = "Enable",
     OPTIONS_ENABLE_DESC  = "Master switch for all SmartLFG features. Toggle anytime with /slfg on or /slfg off.",
-    OPTIONS_QUICKSIGNUP      = "Quick sign-up",
+    OPTIONS_QUICKSIGNUP      = "Double-click sign-up",
     OPTIONS_QUICKSIGNUP_DESC = "Double-click a Premade Groups listing to sign up, Shift + Double-click to add a note," ..
                                " and show the sign-up hint on listing tooltips.",
-    OPTIONS_AUTOACCEPT       = "Auto-accept role checks",
+    OPTIONS_AUTOACCEPT       = "Auto-accept role",
     OPTIONS_AUTOACCEPT_DESC  = "Automatically accept the role check popup when a group leader queues your group.",
     OPTIONS_ROLE         = "Sign-up roles",
-    OPTIONS_ROLE_DESC    = "The roles you sign up as. Pick one or more your class can perform —" ..
-                           " these are your Dungeon Finder roles.",
+    OPTIONS_SECTION      = "Options",
+    OPTIONS_TIP          = "Tip: %s",
+    OPTIONS_TIP_NOTE     = "Shift + Double-click on a listing to add a note.",
 
     -- Tooltip hint (LFG rows) — rendered as two lines with a blank line between
     TOOLTIP_QUICK_SIGNUP = "Double-click to quickly sign up.",
     TOOLTIP_SHIFT_NOTE   = "Shift + Double-click to add a note.",
+
+    -- Minimap button
+    MINIMAP_TOOLTIP      = "Click to open · drag to move",
 }
 
 -- ---------------------------------------------------------------------------

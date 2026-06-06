@@ -11,7 +11,8 @@ sync** at the bottom — a skill + Stop hook enforce it).
 
 A small, **native-as-possible** World of Warcraft addon that streamlines applying to
 **Premade Groups** (Group Finder → Premade Groups, Blizzard's `LFGList`). Install and
-forget: sensible defaults, one small options panel.
+forget: sensible defaults, one small options dialog reachable from `/slfg` or a minimap
+button.
 
 ### Features
 
@@ -26,25 +27,35 @@ forget: sensible defaults, one small options panel.
 4. **Tooltip hint.** Hovering an applicable listing appends a two-line hint, in the
    addon's signature cyan, at the bottom of the tooltip.
 
-Two independent toggles in the options panel sit under the master **Enable** switch:
-**Quick sign-up** (features 1, 2 and 4 — double-click, Shift+double-click note, and the
-tooltip hint) and **Auto-accept role checks** (feature 3). Each can be turned off on its
-own; both are disabled (greyed) in the panel while the master switch is off.
+The UI is a **standalone movable dialog** (dark backdrop, gold border, close X,
+ESC-closable, drag to reposition), opened by `/slfg` or by a **native minimap button**
+(left-click toggles it; drag the button around the minimap ring — its angle persists
+per-character in `minimapAngle`; the button hugs round, square or cornered minimaps via
+`GetMinimapShape()`). Layout (top → bottom): a header with the cyan name + grey version
+top-left and the master **Enable** check on the version row, top-right; a **SIGN-UP
+ROLES** section (white small-caps header) with three centered circular role icons
+(ring + role icon + label beneath, an additive selection highlight on the chosen role); an
+**OPTIONS** section (white small-caps header) with two columns of toggles, **Double-click
+sign-up** (features 1, 2 and 4) and **Auto-accept role** (feature 3); and a bottom
+**Tip** line reusing the tooltip-hint note string. Help text is shown on hover (tooltips),
+not inline. While **Enable** is off the toggles/labels grey out and roles desaturate (and
+the Tip line greys when double-click sign-up is off). The Blizzard Settings → AddOns entry
+is a tiny placeholder (name, version, a clickable `/slfg`) that just opens the dialog.
 
 ### Commands
 
 | Command            | Behavior                                                          |
 |--------------------|------------------------------------------------------------------|
-| `/slfg`            | Opens the options panel (all help/config lives there).           |
-| `/slfg on` / `off` | Master switch for all functionality; mirrors the panel checkbox. |
+| `/slfg`            | Opens the options dialog (all help/config lives there).          |
+| `/slfg on` / `off` | Master switch for all functionality; mirrors the dialog checkbox.|
 
-`/smartlfg` is an alias. There is no other text command — the panel is the UI.
+`/smartlfg` is an alias. There is no other text command — the dialog is the UI.
 
 ### Role model — native LFG roles
 
 The sign-up role is the player's **native LFG role** (the same tank/healer/dps the
 Dungeon Finder uses), read via `GetLFGRoles()` and written via `SetLFGRoles()`. The
-options panel is a **multi-select** front-end to those roles, **constrained to the
+options dialog is a **multi-select** front-end to those roles, **constrained to the
 roles the player's class can perform** (derived from its specializations). The Premade
 sign-up dialog inherits these roles natively — SmartLFG never writes the secure dialog.
 Roles are therefore per-character and persisted by Blizzard, not stored in our DB.
@@ -66,7 +77,7 @@ object in every file. `SavedVariablesPerCharacter: SmartLFGDB`.
 
 ### Load order (alphabetical within `src\`, declared in the `.toc`)
 
-`Commands → Constants → Core → Database → FrameHook → Locale → Options → RoleManager → Util`
+`Commands → Constants → Core → Database → FrameHook → Locale → Minimap → Options → RoleManager → Util`
 
 Safe because **no file calls another module's functions at load time** — all
 cross-module calls happen inside function bodies, which run only after every file loads.
@@ -75,21 +86,22 @@ cross-module calls happen inside function bodies, which run only after every fil
 
 | File | Responsibility |
 |---|---|
-| `Constants.lua` | UI color codes (`SmartLFG.COLOR`), role tokens (`SmartLFG.ROLES`), native role-icon atlases (`SmartLFG.ROLE_ATLAS`). |
+| `Constants.lua` | UI color codes (`SmartLFG.COLOR`), role tokens (`SmartLFG.ROLES`), native role-icon atlases (`SmartLFG.ROLE_ATLAS`, the Group Finder role badges). |
 | `Locale.lua` | All user-visible strings (`SmartLFG.L`). `L_enUS` is the authoritative base; `deDE/frFR/esES/ruRU/ptBR/itIT` metatable-fallback to it (`esMX`→`esES`). |
-| `Database.lua` | `SmartLFGDB` access via `DB.Get`/`DB.Set` only. Per-character. `SCHEMA_VERSION = 7`; keys are `enabled`, `quickSignUp`, `autoAccept`, `roleInitialized` (+ `schemaVersion`). |
+| `Database.lua` | `SmartLFGDB` access via `DB.Get`/`DB.Set` only. Per-character. `SCHEMA_VERSION = 8`; keys are `enabled`, `quickSignUp`, `autoAccept`, `roleInitialized`, `minimapAngle` (+ `schemaVersion`). |
 | `Util.lua` | Stateless helpers: `Print`, `Warn`, `GetAddonVersion`, `HasLFDRoleSelected`, the role model (`GetAvailableRoles`, `GetSelectedRoles`, `GetCurrentSpecRole`, `SetRole`, `ToggleRole`, `GetRoleName`), and `IsPlayerSoloOrLeader`. |
-| `Options.lua` | The options panel: enable checkbox, Quick sign-up + Auto-accept toggles, and the multi-select native role-icon row. `O.Register()`, `O.Open()`, `O.Refresh()`; `CreateCheck` builds one DB-bound checkbox, `CreateRoleButton` builds one role icon. |
+| `Minimap.lua` | Native, hand-rolled minimap button (no libraries). `M.Create()` builds it once; left-click calls `Options.Toggle()`, drag repositions it (angle saved in the `minimapAngle` DB key). `UpdatePosition` clamps the button to the minimap edge using `GetMinimapShape()` + a `MINIMAP_SHAPES` quadrant table, so it follows round/square/cornered minimaps (the LibDBIcon approach, library-free). |
+| `Options.lua` | The standalone options dialog (movable `BackdropTemplate` frame, dark backdrop, close X, ESC-closable). Header (name/version + Enable), a SIGN-UP ROLES section of three circular role buttons with labels, an OPTIONS section of two-column toggles, and a bottom Tip line; help text is hover-tooltip only. Also builds the tiny Settings → AddOns stub that opens the dialog. `O.Register()`, `O.Open()`, `O.Toggle()`, `O.Refresh()`; `CreateCheck` builds one DB-bound checkbox (label + tooltip), `CreateRoleButton` builds one ringed role icon, `CreateSectionHeader`/`WireTooltip` are layout helpers. |
 | `RoleManager.lua` | Behaviors: `ApplyToGroup` (premade sign-up), `SignUp` (LFD queue — legacy), `AutoAcceptRoleCheck` (gated by the `autoAccept` DB key), `PreselectRoleFromSpec` (first-run role seeding), and the session note (`GetNote`/`SetNote`) + note mode for Shift. |
 | `FrameHook.lua` | Hooks the LFG UI: premade row double-click + tooltip + application-dialog auto-submit (all gated by the `quickSignUp` DB key), note hold-open / deferred note restore, and the LFD dungeon-list double-click. |
-| `Commands.lua` | `/slfg` (opens panel) and `/slfg on\|off`. |
-| `Core.lua` | Entry point: registers events, holds the enabled-gate, calls `Options.Register()`. |
+| `Commands.lua` | `/slfg` (opens the dialog) and `/slfg on\|off`. |
+| `Core.lua` | Entry point: registers events, holds the enabled-gate, calls `Options.Register()` and `Minimap.Create()`. |
 
 ### Events (registered in `Core.lua`)
 
 | Event | Gate | Handler |
 |---|---|---|
-| `ADDON_LOADED` | always | Init DB + options panel; hook `Blizzard_LFGList` and `Blizzard_LookingForGroup` when they lazy-load. |
+| `ADDON_LOADED` | always | Init DB + options dialog + minimap button; hook `Blizzard_LFGList` and `Blizzard_LookingForGroup` when they lazy-load. |
 | `PLAYER_LOGIN` | always | `RoleManager.PreselectRoleFromSpec()` — first-run role seeding (spec data is ready by now). |
 | `LFG_LIST_SEARCH_RESULTS_RECEIVED` | always | Re-hook recycled premade ScrollBox rows. |
 | `LFG_ROLE_CHECK_SHOW` | enabled | `RoleManager.AutoAcceptRoleCheck()` (no-ops unless the `autoAccept` key is set). |

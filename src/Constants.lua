@@ -15,7 +15,8 @@ SmartLFG.COLOR = {
 -- drives the options-panel role row.
 SmartLFG.ROLES = { "TANK", "HEALER", "DAMAGER" }
 
--- Native role icons (the same atlases the Premade Groups rows use).
+-- Native role icons (the standard Group Finder role badges). Displayed at a
+-- modest size in the options panel so they stay crisp rather than upscaled-soft.
 SmartLFG.ROLE_ATLAS = {
     TANK    = "groupfinder-icon-role-large-tank",
     HEALER  = "groupfinder-icon-role-large-heal",

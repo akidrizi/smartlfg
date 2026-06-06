@@ -13,6 +13,7 @@ frame:SetScript("OnEvent", function(_, event, ...)
         if loaded == addonName then
             SmartLFG.DB.Init()
             SmartLFG.Options.Register()
+            SmartLFG.Minimap.Create()
             SmartLFG.Print(string.format(SmartLFG.L.WELCOME, SmartLFG.GetAddonVersion()))
         elseif loaded == "Blizzard_LFGList" then
             SmartLFG.FrameHook.HookLFGList()
