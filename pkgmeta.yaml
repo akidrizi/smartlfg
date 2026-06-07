@@ -13,6 +13,7 @@ ignore:
   - .gitattributes
   - .gitignore
   - .luacheckrc
+  - Makefile
   - package.sh
   - "*.zip"
   - "*.tar.gz"

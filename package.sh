@@ -88,6 +88,7 @@ EXCLUDES=(
     '.gitattributes'
     '.gitignore'
     '.luacheckrc'
+    'Makefile'
     'package.sh'
     'pkgmeta.yaml'
     '*.zip'
