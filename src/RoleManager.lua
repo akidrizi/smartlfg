@@ -3,250 +3,137 @@ local _, SmartLFG = ...
 SmartLFG.RoleManager = {}
 local RM = SmartLFG.RoleManager
 
-local LISTING_JOIN_TTL = 180
-local pendingListingJoin
-local pendingActivityLabel
+-- Note mode is armed by Shift+double-click so the application dialog stays open
+-- for the player to type a note, instead of auto-submitting.
+--
+-- We deliberately do NOT pre-fill the note: the dialog's note box is a secure
+-- EditBox and SetText from an addon is blocked by Blizzard (and taints the
+-- whole flow, which then blocks the protected sign-up). Shift simply holds the
+-- dialog open so the player types it themselves.
 local noteMode = false
+function RM.SetNoteMode(v) noteMode = not not v end
+function RM.IsNoteMode()   return noteMode end
 
-function RM.SetNoteMode(val)
-    noteMode = not not val
-end
+-- Remembered note text for the session. We can only *read* the secure note box
+-- (GetText) safely; writing it back is attempted deferred + guarded in
+-- FrameHook, since a direct write taints the protected sign-up.
+local noteText = ""
+function RM.GetNote()     return noteText end
+function RM.SetNote(text) noteText = text or "" end
 
-function RM.IsNoteMode()
-    return noteMode
-end
+-- ── First-run role pre-selection ────────────────────────────────────────────
+-- The very first time SmartLFG sees a character, seed the explicit DB selection
+-- (`selectedRoles`) so sign-up works out of the box. Runs once (guarded by the
+-- per-character `roleInitialized` DB flag). If the player already had native LFG
+-- roles configured we import those (upgrading characters keep what they chose);
+-- otherwise we seed the current spec's role.
+function RM.PreselectRoleFromSpec()
+    if SmartLFG.DB.Get("roleInitialized") then return end
 
-local activityNameCache = {}
-
-function RM.CacheActivityName(resultID, name)
-    if resultID and name and name ~= "" then
-        activityNameCache[resultID] = name
+    -- Import an existing native LFG role setup as the explicit selection.
+    local native = SmartLFG.GetNativeRoles()
+    if next(native) then
+        SmartLFG.DB.Set("selectedRoles", native)
+        SmartLFG.DB.Set("roleInitialized", true)
+        SmartLFG.Options.Refresh()
+        return
     end
+
+    -- Spec data may not be ready yet; if so, leave the flag unset and retry
+    -- on the next login rather than locking in "no role".
+    local role = SmartLFG.GetCurrentSpecRole()
+    if not role then return end
+
+    SmartLFG.DB.Set("selectedRoles", { [role] = true })
+    SmartLFG.DB.Set("roleInitialized", true)
+    SmartLFG.Options.Refresh()
 end
 
-function RM.SetPendingActivityLabel(name)
-    if name and name ~= "" then
-        pendingActivityLabel = name
-        if pendingListingJoin then
-            pendingListingJoin.activity = name
-        end
+-- ── Sign up to a Premade group ──────────────────────────────────────────────
+-- Opens the application dialog. FrameHook's OnShow hook either auto-submits
+-- (plain double-click) or holds it open for a note (note mode). We resolve and
+-- write the native LFG roles first (explicit selection, else solo/group
+-- fallback — see ResolveSignUpRoles); the secure dialog inherits them natively,
+-- so we never touch it here.
+function RM.ApplyToGroup(withNote)
+    if not SmartLFG.IsPlayerSoloOrLeader() then return end
+    if not SmartLFG.ApplyResolvedRoles() then
+        SmartLFG.Warn(SmartLFG.L.ROLE_REQUIRED)
+        return
     end
-end
 
-local APPLICATION_STATUS_BY_VALUE = {}
-for _, key in ipairs({
-    "applied", "invited", "inviteaccepted", "declined",
-    "cancelled", "invitedeclined", "timedout", "failed",
-}) do
-    local value = _G["LFG_LIST_APPLICATION_STATUS_" .. string.upper(key)]
-    if value ~= nil then
-        APPLICATION_STATUS_BY_VALUE[value] = key
-    end
-end
-
-local function NormalizeApplicationStatus(status)
-    if status == nil then return nil end
-    if type(status) == "string" then return status:lower() end
-    return APPLICATION_STATUS_BY_VALUE[status] or tostring(status):lower()
-end
-
-local function GetCurrentApplicationStatus(resultID)
-    if not (C_LFGList and C_LFGList.GetApplicationInfo) then return nil end
-    local info = C_LFGList.GetApplicationInfo(resultID)
-    if type(info) == "table" then
-        return NormalizeApplicationStatus(
-            info.applicationStatus or info.status or info.appStatus or info.pendingStatus
-        )
-    end
-    return NormalizeApplicationStatus(info)
-end
-
-local function HasActiveApplication(resultID)
-    if not resultID then return false end
-    local status = GetCurrentApplicationStatus(resultID)
-    return status == "applied" or status == "invited" or status == "inviteaccepted"
-end
-
-local function HasRoleSelected()
-    if SmartLFG.HasLFDRoleSelected() then return true end
-    local key = SmartLFG.COLOR.ROLE .. SmartLFG.GetGroupFinderKey() .. SmartLFG.COLOR.RESET
-    SmartLFG.Warn(string.format(SmartLFG.L.NO_ROLE, key))
-    return false
-end
-
-local function ResolveActivityName(activityID)
-    if not activityID or activityID == 0 then return nil end
-    local function tryAPI(fn)
-        if not fn then return nil end
-        local act = fn(activityID)
-        if type(act) == "table" then
-            return act.activityName or act.fullName or act.shortName or act.groupFinderActivityGroupName
-        elseif type(act) == "string" and act ~= "" then
-            return act
-        end
-    end
-    return tryAPI(C_LFGList and C_LFGList.GetActivityInfoTable)
-        or tryAPI(C_LFGList and C_LFGList.GetActivityInfo)
-end
-
-local function GetPremadeActivityLabel(resultID)
-    if not resultID then return nil end
-    if activityNameCache[resultID] then return activityNameCache[resultID] end
-    if not (C_LFGList and C_LFGList.GetSearchResultInfo) then return nil end
-    local info = C_LFGList.GetSearchResultInfo(resultID)
-    if not info then return nil end
-    if info.activityName and info.activityName ~= "" then return info.activityName end
-    local tried = {}
-    local function tryActivityID(aid)
-        if not aid or aid == 0 or tried[aid] then return nil end
-        tried[aid] = true
-        local label = ResolveActivityName(aid)
-        return (label and label ~= "") and label or nil
-    end
-    if type(info.activityIDs) == "table" then
-        for _, aid in ipairs(info.activityIDs) do
-            local label = tryActivityID(aid)
-            if label then return label end
-        end
-    end
-    local label = tryActivityID(info.activityID)
-    if label then return label end
-    if info.name and info.name ~= "" then return info.name end
-    return nil
-end
-
-local function GetSelectedPremadeResultID()
     local panel = LFGListFrame and LFGListFrame.SearchPanel
-    if not panel then return nil end
-    return panel.selectedResultID or panel.selectedResult or panel.selectedIndex or panel.resultID
+    local signUpBtn = panel and panel.SignUpButton
+    if not signUpBtn then
+        if LFGListSearchPanel_SignUp and panel then
+            LFGListSearchPanel_SignUp(panel)
+        else
+            SmartLFG.Warn(SmartLFG.L.NO_SIGNUP_BTN)
+        end
+        return
+    end
+    if not signUpBtn:IsEnabled() then return end
+
+    RM.SetNoteMode(withNote)
+    signUpBtn:Click()
 end
 
+-- ── LFD queue sign-up (double-click in the dungeon finder) ──────────────────
+-- TODO(rework A): remove once SmartLFG is Premade-only.
 function RM.SignUp()
     if not SmartLFG.IsPlayerSoloOrLeader() then return end
-    if not HasRoleSelected() then return end
-    local mode = GetLFGMode(LE_LFG_CATEGORY_LFD)
-    if mode then return end
+    if not SmartLFG.ApplyResolvedRoles() then return end
+    if GetLFGMode(LE_LFG_CATEGORY_LFD) then return end
     LFGTeleport(false)
-    SmartLFG.Print(string.format(SmartLFG.L.SIGNED_UP, SmartLFG.GetLFDRoleDisplay() or "?"))
 end
 
-function RM.ApplyToGroup(resultID, activityNameHint, withNote)
-    if not SmartLFG.IsPlayerSoloOrLeader() then return end
-    if not HasRoleSelected() then return end
-    resultID = resultID or GetSelectedPremadeResultID()
-    pendingActivityLabel = (activityNameHint and activityNameHint ~= "" and activityNameHint)
-                        or GetPremadeActivityLabel(resultID)
-    local signUpBtn = LFGListFrame
-        and LFGListFrame.SearchPanel
-        and LFGListFrame.SearchPanel.SignUpButton
-    if signUpBtn then
-        if signUpBtn:IsEnabled() then
-            if withNote then RM.SetNoteMode(true) end
-            signUpBtn:Click()
-        elseif not HasActiveApplication(resultID) then
-            SmartLFG.Print(SmartLFG.L.MAX_APPLICATIONS)
-        end
-    elseif LFGListSearchPanel_SignUp and LFGListFrame and LFGListFrame.SearchPanel then
-        LFGListSearchPanel_SignUp(LFGListFrame.SearchPanel)
-    else
-        SmartLFG.Warn(SmartLFG.L.NO_SIGNUP_BTN)
+-- ── Auto-accept role check ──────────────────────────────────────────────────
+-- A direct `LFDRoleCheckPopupAcceptButton:Click()` from this (non-hardware)
+-- event path intermittently gets swallowed: our addon code taints the click and
+-- the protected accept is silently dropped (tracing showed ~1 in 9 missed, and
+-- calling CompleteLFGRoleCheck directly was worse — heavy taint). The fix is to
+-- "launder" the click through the secure `/click` chat command: routing it via
+-- the chat command handler runs the click inside Blizzard's secure code path,
+-- not our tainted one, so the protected accept goes through cleanly.
+--
+-- The command must go through a real, fully-initialized chat editbox
+-- (DEFAULT_CHAT_FRAME.editBox); a standalone ChatFrameEditBoxTemplate errors on
+-- load because it has no backing chatFrame. To avoid clobbering a message the
+-- player is mid-typing, we only hijack the editbox when it's hidden (idle); if
+-- it's open we fall back to a best-effort direct click. Accepts for any leader
+-- (the friends-list gate was removed in the overhaul).
+local ACCEPT_RETRY_INTERVAL = 0.1   -- seconds between attempts
+local ACCEPT_MAX_TRIES      = 10    -- ~1s total
+
+local function AcceptViaSecureClick(button)
+    local eb = DEFAULT_CHAT_FRAME and DEFAULT_CHAT_FRAME.editBox
+    if not eb or eb:IsShown() then
+        -- Editbox busy (player typing) or unavailable: don't steal it.
+        if button:IsEnabled() then button:Click() end
+        return
     end
+    eb:SetText("/click " .. button:GetName())
+    ChatEdit_SendText(eb, 0)
+end
+
+-- `seen` tracks whether the popup has ever been visible during this run. We may
+-- fire before Blizzard lays the popup out (handler order for LFG_ROLE_CHECK_SHOW
+-- isn't guaranteed), so an invisible button early on means "not ready yet" — keep
+-- polling. Once we've seen it and it's gone, the accept went through and we stop.
+local function tryAcceptRoleCheck(tries, seen)
+    local btn = LFDRoleCheckPopupAcceptButton
+    if btn and btn:IsVisible() then
+        AcceptViaSecureClick(btn)
+        seen = true
+    elseif seen then
+        return  -- was visible, now gone → accepted/closed. Done.
+    end
+
+    if tries >= ACCEPT_MAX_TRIES then return end
+    C_Timer.After(ACCEPT_RETRY_INTERVAL, function() tryAcceptRoleCheck(tries + 1, seen) end)
 end
 
 function RM.AutoAcceptRoleCheck()
-    if not SmartLFG.DB.Get("autoAcceptFriends") then return end
-    local leader, leaderUnit = SmartLFG.GetGroupLeader()
-    if not SmartLFG.IsFriend(leader) then return end
-    if not HasRoleSelected() then return end
-    local btn = LFDRoleCheckPopupAcceptButton
-    if not (btn and btn:IsVisible()) then return end
-    btn:Click()
-    local C = SmartLFG.COLOR
-    local _, classFile = UnitClass(leaderUnit or "player")
-    local leaderColor = SmartLFG.CLASS_COLOR[classFile] or C.OK
-    SmartLFG.Print(string.format(SmartLFG.L.AUTO_ACCEPTED,
-        SmartLFG.GetLFDRoleDisplay() or "?",
-        leaderColor .. tostring(leader) .. C.RESET
-    ))
-end
-
-function RM.OnActiveEntryUpdate()
-    if not (C_LFGList and C_LFGList.GetActiveEntryInfo) then return end
-    local entry = C_LFGList.GetActiveEntryInfo()
-    if not entry then return end
-    local activityName = (type(entry.activityName) == "string" and entry.activityName ~= "" and entry.activityName)
-    if not activityName then
-        local function tryID(aid)
-            if not aid or aid == 0 then return nil end
-            local n = ResolveActivityName(aid)
-            return (n and n ~= "") and n or nil
-        end
-        if type(entry.activityIDs) == "table" then
-            for _, aid in ipairs(entry.activityIDs) do
-                activityName = tryID(aid)
-                if activityName then break end
-            end
-        end
-        if not activityName then
-            activityName = tryID(entry.activityID)
-        end
-    end
-    if activityName and activityName ~= "" then
-        pendingActivityLabel = activityName
-        if pendingListingJoin then
-            pendingListingJoin.activity = activityName
-        end
-    end
-end
-
-function RM.OnLFGListApplicationStatusUpdated(resultID, ...)
-    if not resultID then return end
-    local newStatusRaw, oldStatusRaw = ...
-    local newStatus = NormalizeApplicationStatus(newStatusRaw) or GetCurrentApplicationStatus(resultID)
-    local oldStatus = NormalizeApplicationStatus(oldStatusRaw)
-    if newStatus == "declined"
-        or newStatus == "cancelled"
-        or newStatus == "invitedeclined"
-        or newStatus == "timedout"
-        or newStatus == "failed"
-    then
-        if pendingListingJoin and pendingListingJoin.resultID == resultID then
-            pendingListingJoin = nil
-        end
-        return
-    end
-    if newStatus == "applied"
-        or newStatus == "invited"
-        or newStatus == "inviteaccepted"
-        or oldStatus == "applied"
-        or oldStatus == "invited"
-        or oldStatus == "inviteaccepted"
-        or newStatus ~= nil
-    then
-        pendingListingJoin = {
-            resultID  = resultID,
-            activity  = pendingActivityLabel or GetPremadeActivityLabel(resultID),
-            expiresAt = GetTime() + LISTING_JOIN_TTL,
-        }
-        pendingActivityLabel = nil
-        if newStatus == "applied" and oldStatus ~= "applied" then
-            SmartLFG.Print(string.format(SmartLFG.L.APPLYING, SmartLFG.GetLFDRoleDisplay() or "?"))
-        end
-    end
-end
-
-function RM.MaybePrintJoinedListingGroup()
-    if not pendingListingJoin then return end
-    local inHomeGroup = IsInGroup(LE_PARTY_CATEGORY_HOME) or IsInRaid(LE_PARTY_CATEGORY_HOME)
-    if not inHomeGroup then return end
-    if pendingListingJoin.expiresAt <= GetTime() then
-        pendingListingJoin = nil
-        return
-    end
-    if not pendingListingJoin.activity then
-        pendingListingJoin.activity = GetPremadeActivityLabel(pendingListingJoin.resultID)
-    end
-    local activity = pendingListingJoin.activity or SmartLFG.L.GROUP_TYPE_UNKNOWN
-    SmartLFG.Print(string.format(SmartLFG.L.JOINED_GROUP_FOR, activity))
-    pendingListingJoin = nil
+    if not SmartLFG.DB.Get("autoAccept") then return end
+    tryAcceptRoleCheck(0, false)
 end

@@ -8,9 +8,12 @@ ignore:
   - .idea/
   - docs/
   - dist/
+  - CLAUDE.md
   - .editorconfig
+  - .gitattributes
   - .gitignore
   - .luacheckrc
+  - Makefile
   - package.sh
   - "*.zip"
   - "*.tar.gz"

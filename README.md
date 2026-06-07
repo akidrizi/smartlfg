@@ -1,29 +1,30 @@
 # SmartLFG
-Auto-accept Group Finder role check and double-click to sign-up.
+Stop clicking through menus — double-click any Premade listing and you're signed up. 
+SmartLFG makes applying to groups instant, native, and effortless.
 
-Install & forget. no settings needed, the add-on uses the role set on Group Finder (Dungeon Finder).
+<p align="center">
+  <img src="media/options-menu.png" alt="Tooltip hint on a listing">
+</p>
 
-![Tooltip hint on a listing](media/tooltip-only.png)
 
 ### Features
 
-* Open the **Group Finder → Premade Groups** and **double-click** any listing.
-* Auto-accepts the role check popup when a friend queues the group.
-* Set your role: open the Group Finder (default key: `I`) and tick your role.
+* **Double-click** any listing to sign up instantly.
+* **Shift + double-click** to open the application and add a note before submitting.
+* **Auto-accept** the role check popup when the leader queues the group.
+* Open **Options menu** from the minimap or with the command `/slfg` to: **choose role** & **toggle features**.
 * Multilingual support: 🇬🇧 `English`, 🇩🇪 `German`, 🇫🇷 `French`, 🇪🇸 `Spanish`, 🇷🇺 `Russian`, 🇧🇷 `Portuguese (Brazil)`, 🇮🇹 `Italian`
 
 ### Commands
 
-| Command                    |What it does                    |
-|----------------------------|------------------------------- |
-| <code>/slfg on\|off</code> |Turn the addon on or off        |
-| <code>/slfg friends</code> |Toggle auto-accept from friends |
-| <code>/slfg status</code>  |Show current settings           |
-| <code>/slfg help</code>    |List all commands               |
+| Command                    | What it does                                    |
+|----------------------------|-------------------------------------------------|
+| <code>/slfg</code>         | Open the options panel (all help & config here) |
+| <code>/slfg on\|off</code> | Turn the addon on or off                        |
+
+`/smartlfg` is an alias for `/slfg`.
 
 ***
 Share any feedback, suggestions or bug reports [Github](https://github.com/akidrizi/smartlfg/issues) | [Curse](https://www.curseforge.com/wow/addons/smartlfg) | [Wago](https://addons.wago.io/addons/smartlfg).
-
-I am working on **SmartLFG 2.0** with more new automations and better UI.
 
 💬 Reach me on Discord: **@omorfoskitsos**

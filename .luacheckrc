@@ -12,68 +12,75 @@ max_line_length = 120
 --   211 — unused local variable (common in WoW addon boilerplate)
 --   212 — unused argument
 --   213 — unused loop variable
-ignore = { "211", "212", "213" }
+-- ignore = { "211", "212", "213" }
 
 -- ── WoW API globals ────────────────────────────────────────────────────────
 -- Everything the WoW client injects into the global environment.
 -- Listed here so luacheck doesn't flag them as undefined globals.
+-- Keep this list in sync with what src/ actually references.
 globals = {
-    -- Addon saved variable (declared in SmartLFG.toc SavedVariables)
+    -- Addon saved variable (declared in SmartLFG.toc)
     "SmartLFGDB",
 
     -- Unit / group queries
-    "UnitClass",
-    "UnitName",
-    "UnitExists",
     "UnitIsGroupLeader",
-    "GetNumGroupMembers",
-    "IsInRaid",
     "IsInGroup",
+    "UnitClass",
     "LE_PARTY_CATEGORY_HOME",
 
     -- LFD / queue API
     "GetLFGRoles",
+    "SetLFGRoles",
     "LFDRoleCheckPopupAcceptButton",
+    "ChatEdit_SendText",
     "LFGTeleport",
     "GetLFGMode",
     "LE_LFG_CATEGORY_LFD",
 
-    -- LFG List events (used only to trigger frame re-hook, not polling)
-    "LFG_LIST_SEARCH_RESULTS_RECEIVED",
+    -- Specialization / role API (class-based role selection)
+    "GetNumSpecializations",
+    "GetSpecialization",
+    "GetSpecializationInfo",
+
+    -- In-game options / settings panel
+    "Settings",
+    "InterfaceOptions_AddCategory",
+    "InterfaceOptionsFrame_OpenToCategory",
+    "GameFontNormalLarge",
+    "GameFontHighlightSmall",
+    "PlaySound",
+    "SOUNDKIT",
+    "CreateAtlasMarkup",
+    "RAID_CLASS_COLORS",
 
     -- C_* namespaces
-    "C_BattleNet",
-    "C_FriendList",
     "C_LFGList",
+    "C_AddOns",
+    "C_Timer",
+    "C_ClassColor",
 
     -- ScrollBox (WoW 10.x+ scroll container used by Blizzard_LFGList)
     "BaseScrollBoxEvents",
-
-    -- Friends
-    "BNGetNumFriends",
 
     -- UI / frame
     "CreateFrame",
     "UIParent",
     "GameTooltip",
-    "GameFontNormal",
     "DEFAULT_CHAT_FRAME",
     "GetTime",
-    "GetBuildInfo",
-    "GetBindingKey",
     "GetLocale",
     "IsShiftKeyDown",
-    "C_AddOns",
-
-    -- Class colors and localized names (WoW globals)
-    "RAID_CLASS_COLORS",
-    "LOCALIZED_CLASS_NAMES_MALE",
+    "Minimap",
+    "GetCursorPosition",
+    "GetMinimapShape",
+    "UISpecialFrames",
 
     -- LFG frame globals
     "LFGParentFrame",
     "LFGListFrame",
     "LFGListApplicationDialog",
     "LFGListSearchPanel_SignUp",
+    "ToggleLFDParentFrame",
 
     -- Slash command registration
     "SLASH_SMARTLFG1",
