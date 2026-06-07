@@ -77,11 +77,15 @@ function M.Create()
     button:RegisterForDrag("LeftButton")
     button:SetClampedToScreen(true)
 
-    -- Round addon icon, framed by the standard minimap tracking border.
+    -- Round addon icon, framed by the standard minimap tracking border. The
+    -- border (53px at the button's TOPLEFT) does not centre its ring on the
+    -- button: it frames a 20px disc anchored at TOPLEFT (7,-5) — the slot
+    -- LibDBIcon uses for its background. Anchoring the icon there centres it in
+    -- the ring (centring on the button leaves it ~1.5px left of the ring).
     local icon = button:CreateTexture(nil, "BACKGROUND")
     icon:SetSize(20, 20)
     icon:SetTexture(MINIMAP_ICON)
-    icon:SetPoint("CENTER", button, "CENTER", 0, 1)
+    icon:SetPoint("TOPLEFT", button, "TOPLEFT", 7, -5)
     icon:SetMask("Interface\\CharacterFrame\\TempPortraitAlphaMask")
 
     local border = button:CreateTexture(nil, "OVERLAY")

@@ -161,20 +161,23 @@ inside the hardware-click event** so the protected `ApplyToGroup` is allowed. We
 | Task | How |
 |---|---|
 | Lint | `luacheck src/*.lua` |
-| Deploy to the live client | `bash deploy.sh` (Git Bash). Stages to a temp dir then swaps in; uses `rsync` if present, else a `tar` fallback. Copies only runtime files (`.toc`, `src/`, `media/icon.jpg`, `media/minimap_64.png`). |
 | Build release zip | `bash package.sh` → `dist/<version>.zip` |
+| Deploy to the live client | `bash package.sh --deploy` (Git Bash). Builds the same staging tree as the zip, then copies it into the WoW AddOns folder. Destination resolves first match of: `--dest <addons-dir>`, `$WOW_ADDONS_DIR`, then `DEFAULT_ADDONS_DIR` in the script. Uses `rsync` if present, else a `tar` fallback. |
 | Release | Push a **bare semver** tag matching `## Version:` in the `.toc` (e.g. `2.0.0`, no `v` prefix); `release.yml` calls `package.sh` and creates the GitHub Release. |
 
-- The deployed/released runtime is the `.toc` + `src/` + `media/icon.jpg` +
-  `media/minimap_64.png` only.
-- **Three exclude lists must stay in sync:** `package.sh` (EXCLUDES), `pkgmeta.yaml`
-  (ignore — CurseForge/Wago), and `deploy.sh` (EXCLUDES). They drop docs, dev assets,
-  tooling, `CLAUDE.md`, the screenshot PNGs, and the unused minimap icon sizes/previews
-  (`minimap_16.png`, `minimap_32.png`, `minimap_preview256.png`, `comparison_minimap.png`),
-  but **keep `media/icon.jpg`** (the in-game AddOns-list icon, referenced by
-  `## IconTexture:`) and **`media/minimap_64.png`** (the minimap button icon).
-- The icons must remain a format the client renders; they ship via `media/icon.jpg` and
-  `media/minimap_64.png`.
+- `package.sh` is the **single source of truth** for what ships: it builds the
+  staging tree once from its `EXCLUDES` list, then either zips it (default) or
+  copies it to the live client (`--deploy`), so the two are byte-identical.
+- The shipped runtime is the `.toc` + `src/` + `media/` + the repo docs
+  (`README.md`, `CHANGELOG.md`, `LICENSE.md`). `media/icon.jpg` is the in-game
+  AddOns-list icon (referenced by `## IconTexture:`) and `media/minimap_64.png`
+  is the minimap button icon; both must stay a format the client renders.
+- **Two exclude lists must stay in sync:** `package.sh` (EXCLUDES) and
+  `pkgmeta.yaml` (ignore — CurseForge/Wago). They drop VCS/CI/IDE metadata,
+  `docs/`, `dist/`, tooling, `CLAUDE.md`, and dotfiles.
+- Note: `media/` currently ships wholesale, so dev assets (`media/icon.png`,
+  `media/minimap_256.png`, `media/options-menu.png`) are still included — pending
+  exclusion if a leaner package is wanted.
 
 ---
 

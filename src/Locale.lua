@@ -37,10 +37,9 @@ local L_enUS = {
     -- %s placeholders are the chat commands; the caller colors them (Options.lua).
     OPTIONS_ENABLE_DESC  = "Master switch for all SmartLFG features.\nToggle anytime with %s or %s.",
     OPTIONS_QUICKSIGNUP      = "Double-click sign-up",
-    OPTIONS_QUICKSIGNUP_DESC = "Double-click a Premade Groups listing to sign up, Shift + Double-click to add a note," ..
-                               " and show the sign-up hint on listing tooltips.",
+    OPTIONS_QUICKSIGNUP_DESC = "Double-click on a Premade Group listing to quickly sign-up.",
     OPTIONS_AUTOACCEPT       = "Auto-accept role",
-    OPTIONS_AUTOACCEPT_DESC  = "Automatically accept the role check popup when a group leader queues your group.",
+    OPTIONS_AUTOACCEPT_DESC  = "Automatically accept the role check pop-up when the group leader queues up the group.",
     OPTIONS_ROLE         = "Sign-up roles",
     -- Roles-section fallback tooltip. _TITLE is the white first line; the second
     -- line's %s are the spec's role icon and the class-colored spec name.

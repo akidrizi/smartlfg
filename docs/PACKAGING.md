@@ -4,39 +4,7 @@ How to prepare the source tree, run the CI pipeline, and publish a release.
 
 ---
 
-## 1. Project layout
-
-```
-SmartLFG/                        ← repository root (= addon folder name)
-├── .gitignore
-├── .editorconfig
-├── .luacheckrc                  ← luacheck configuration (single source of truth)
-├── CHANGELOG.md
-├── LICENSE.md
-├── package.sh                   ← local build helper
-├── pkgmeta.yaml                 ← Curseforge build helper
-├── README.md
-├── SmartLFG.toc                 ← WoW Table of Contents
-├── .github/
-│   └── workflows/
-│       ├── ci.yml               ← lint on push / PR
-│       └── release.yml          ← package + GitHub Release on semver tag
-├── docs/
-│   └── PACKAGING.md             ← this file
-└── src/
-    ├── Commands.lua
-    ├── Constants.lua
-    ├── Core.lua
-    ├── Database.lua
-    ├── FrameHook.lua
-    ├── Locale.lua
-    ├── RoleManager.lua
-    └── Util.lua
-```
-
----
-
-## 2. GitHub Actions workflows
+## 1. GitHub Actions workflows
 
 ### `ci.yml` — Continuous Integration
 
@@ -61,7 +29,7 @@ Job 3: release    →   creates GitHub Release, attaches zip, auto-labels pre-re
 
 ---
 
-## 3. Semver tag format & regex
+## 2. Semver tag format & regex
 
 Tags use **bare semver** — no `v` prefix.
 
@@ -87,7 +55,7 @@ v1.2.3         ← "v" prefix not allowed
 
 ---
 
-## 4. Publishing a release (step by step)
+## 3. Publishing a release (step by step)
 
 ### Step 1 — Update the version
 
@@ -144,12 +112,20 @@ Go to **Releases** on your GitHub repository page. The new release should be vis
     ├── LICENSE.md
     ├── README.md
     ├── SmartLFG.toc
+    ├── media/
     └── src/
 ```
 
 ---
 
-## 5. Local build (without CI)
+## 4. Local build & deploy (without CI)
+
+`package.sh` is the single source of truth for what ships. It builds the staging
+tree once from its `EXCLUDES` list, then either zips it (default) or copies it
+straight into the live client (`--deploy`) — so a local deploy is byte-identical
+to the released zip.
+
+### Build a release zip
 
 ```bash
 chmod +x package.sh
@@ -157,9 +133,32 @@ chmod +x package.sh
 # → dist/<version>.zip
 ```
 
+### Deploy to the live client (for testing)
+
+```bash
+./package.sh --deploy
+# → installs into the WoW AddOns folder, then /reload in-game
+```
+
+The destination AddOns directory is resolved in this order (first match wins):
+
+| Priority | Source | Example |
+|---|---|---|
+| 1 | `--dest <addons-dir>` | `./package.sh --deploy --dest "/d/WoW/_retail_/Interface/AddOns"` |
+| 2 | `$WOW_ADDONS_DIR` env var | `export WOW_ADDONS_DIR="/d/WoW/_retail_/Interface/AddOns"` |
+| 3 | `DEFAULT_ADDONS_DIR` in `package.sh` | `…/World of Warcraft/_retail_/Interface/AddOns` |
+
+If none of these point at a real folder, the deploy aborts without touching the
+client. The staging tree is fully built before the live folder is touched, so a
+build failure can never leave the installed addon half-wiped.
+
+> Requires `zip` only for the build (release-zip) path; `--deploy` needs just
+> `rsync` **or** `tar` (a `tar` fallback runs automatically when `rsync` is
+> absent, e.g. on stock Git Bash).
+
 ---
 
-## 6. WoW interface version reference
+## 5. WoW interface version reference
 
 | Expansion | Interface value |
 |---|---|
@@ -176,7 +175,7 @@ Check the live version in-game:
 
 ---
 
-## 7. Linting locally
+## 6. Linting locally
 
 ```bash
 luarocks install luacheck   # one-time install
