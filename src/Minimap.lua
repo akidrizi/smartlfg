@@ -65,6 +65,20 @@ local function DragUpdate()
     UpdatePosition()
 end
 
+-- ── Tooltip: left-click hint + a right-click on/off hint that flips with the
+-- current state (green "Enable" while off, red "Disable" while on) ────────────
+local function ShowTooltip(self)
+    local C, L = SmartLFG.COLOR, SmartLFG.L
+    local action = SmartLFG.DB.Get("enabled")
+        and (C.WARN .. L.MINIMAP_DISABLE .. C.RESET)
+        or  (C.OK   .. L.MINIMAP_ENABLE  .. C.RESET)
+    GameTooltip:SetOwner(self, "ANCHOR_LEFT")
+    GameTooltip:SetText(C.ADDON .. "SmartLFG" .. C.RESET)
+    GameTooltip:AddLine(L.MINIMAP_TOOLTIP, 1, 1, 1)
+    GameTooltip:AddLine(string.format(L.MINIMAP_RIGHTCLICK, action), 1, 1, 1)
+    GameTooltip:Show()
+end
+
 -- ── Build the button once ───────────────────────────────────────────────────
 function M.Create()
     if button then return end
@@ -73,7 +87,7 @@ function M.Create()
     button:SetSize(31, 31)
     button:SetFrameStrata("MEDIUM")
     button:SetFrameLevel(8)
-    button:RegisterForClicks("LeftButtonUp")
+    button:RegisterForClicks("LeftButtonUp", "RightButtonUp")
     button:RegisterForDrag("LeftButton")
     button:SetClampedToScreen(true)
 
@@ -95,8 +109,23 @@ function M.Create()
 
     button:SetHighlightTexture("Interface\\Minimap\\UI-Minimap-ZoomButton-Highlight")
 
-    button:SetScript("OnClick", function()
-        SmartLFG.Options.Toggle()
+    -- Left-click toggles the dialog; right-click flips the master switch
+    -- (mirroring /slfg on|off), then refreshes the tooltip to the new state.
+    button:SetScript("OnClick", function(self, mouseButton)
+        if mouseButton == "RightButton" then
+            local C, L = SmartLFG.COLOR, SmartLFG.L
+            local enabled = not SmartLFG.DB.Get("enabled")
+            SmartLFG.DB.Set("enabled", enabled)
+            SmartLFG.Options.Refresh()
+            if enabled then
+                SmartLFG.Print(C.OK .. L.ADDON_ENABLED .. C.RESET)
+            else
+                SmartLFG.Print(C.WARN .. L.ADDON_DISABLED .. C.RESET)
+            end
+            ShowTooltip(self)
+        else
+            SmartLFG.Options.Toggle()
+        end
     end)
 
     button:SetScript("OnDragStart", function(self)
@@ -106,12 +135,7 @@ function M.Create()
         self:SetScript("OnUpdate", nil)
     end)
 
-    button:SetScript("OnEnter", function(self)
-        GameTooltip:SetOwner(self, "ANCHOR_LEFT")
-        GameTooltip:SetText(SmartLFG.COLOR.ADDON .. "SmartLFG" .. SmartLFG.COLOR.RESET)
-        GameTooltip:AddLine(SmartLFG.L.MINIMAP_TOOLTIP, 1, 1, 1)
-        GameTooltip:Show()
-    end)
+    button:SetScript("OnEnter", ShowTooltip)
     button:SetScript("OnLeave", function() GameTooltip:Hide() end)
 
     UpdatePosition()

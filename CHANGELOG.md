@@ -1,6 +1,12 @@
 SmartLFG Changelog
 ==================
 
+2.1.0
+-----
+- New: conflict detection — SmartLFG now notices when another add-on hijacks the Premade sign-up, warns you once in chat, and marks the affected option with a ▲ icon in /slfg.
+- New: right-click the minimap button to enable/disable the addon; the tooltip shows the action and flips with the current state.
+- Updated locales for the new messages.
+
 2.0.0
 -----
 - New in-game options panel: enable/disable and pick your sign-up role(s).

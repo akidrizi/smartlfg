@@ -13,10 +13,21 @@ local _, SmartLFG = ...
 -- ---------------------------------------------------------------------------
 local L_enUS = {
     -- Startup
-    WELCOME              = "v%s  ·  /slfg",
+    WELCOME              = "v%s  -  /slfg",
 
     -- Premade sign-up
     NO_SIGNUP_BTN        = "Could not find the sign-up button.",
+
+    -- Behavioral conflict self-check: our sign-up pipeline didn't open the
+    -- application dialog, so another sign-up add-on likely drove it first.
+    CONFLICT_TITLE       = "Add-on conflict",
+    CONFLICT_DETECTED    = "Couldn't sign up. Another add-on that manages Premade Groups or LFG may be getting in the way. Try disabling those add-ons, then /reload.",
+
+    -- OPTIONS-header quest icon tooltip explaining the per-option conflict marks.
+    -- _DESC's %s is the warning-triangle icon (inline atlas markup, added by Options.lua).
+    CONFLICT_INFO_TITLE  = "Conflict Detection",
+    CONFLICT_INFO_DESC   = "The %s icon next to an option indicates that a conflict has been detected.",
+    CONFLICT_INFO_HINT   = "Hover over the icon, when it appears, to understand the conflict.",
 
     -- Warning when trying to sign up with no role selected
     ROLE_REQUIRED        = "Select a role in /slfg before signing up.",
@@ -36,7 +47,7 @@ local L_enUS = {
     OPTIONS_ENABLE_SHORT = "Enable",
     -- %s placeholders are the chat commands; the caller colors them (Options.lua).
     OPTIONS_ENABLE_DESC  = "Master switch for all SmartLFG features.\nToggle anytime with %s or %s.",
-    OPTIONS_QUICKSIGNUP      = "Double-click sign-up",
+    OPTIONS_QUICKSIGNUP      = "Couldn't sign up. Another add-on that manages Premade Groups or LFG may be getting in the way. Try disabling those add-ons, then use /reload.",
     OPTIONS_QUICKSIGNUP_DESC = "Double-click on a Premade Group listing to quickly sign-up.",
     OPTIONS_AUTOACCEPT       = "Auto-accept role",
     OPTIONS_AUTOACCEPT_DESC  = "Automatically accept the role check pop-up when the group leader queues up the group.",
@@ -54,7 +65,11 @@ local L_enUS = {
     TOOLTIP_SHIFT_NOTE   = "Shift + Double-click to add a note.",
 
     -- Minimap button
-    MINIMAP_TOOLTIP      = "Click to open · drag to move",
+    MINIMAP_TOOLTIP      = "Click to open - drag to move",
+    -- Right-click hint; %s is the colored action (green Enable / red Disable).
+    MINIMAP_RIGHTCLICK   = "Right click to %s",
+    MINIMAP_ENABLE       = "Enable",
+    MINIMAP_DISABLE      = "Disable",
 }
 
 -- ---------------------------------------------------------------------------
@@ -62,6 +77,12 @@ local L_enUS = {
 -- ---------------------------------------------------------------------------
 local L_deDE = setmetatable({
     NO_SIGNUP_BTN        = "Anmelde-Schaltfläche nicht gefunden.",
+    CONFLICT_TITLE       = "Addon-Konflikt",
+    CONFLICT_DETECTED    = "Anmeldung fehlgeschlagen. Ein anderes Addon, das Premade-Gruppen oder LFG verwaltet, könnte stören. "
+        .. "Deaktiviere diese Addons und gib dann /reload ein.",
+    CONFLICT_INFO_TITLE  = "Konflikterkennung",
+    CONFLICT_INFO_DESC   = "Das %s-Symbol neben einer Option bedeutet, dass ein Konflikt erkannt wurde.",
+    CONFLICT_INFO_HINT   = "Bewege den Mauszeiger über das Symbol, wenn es erscheint, um den Konflikt zu verstehen.",
     ROLE_REQUIRED        = "Wählt vor der Anmeldung eine Rolle in /slfg aus.",
     ROLE_HEALER          = "Heiler",
     ADDON_ENABLED        = "SmartLFG aktiviert.",
@@ -81,7 +102,10 @@ local L_deDE = setmetatable({
     OPTIONS_TIP_NOTE     = "Shift + Doppelklick auf einen Eintrag, um eine Notiz hinzuzufügen.",
     TOOLTIP_QUICK_SIGNUP = "Doppelklick für schnelles Anmelden.",
     TOOLTIP_SHIFT_NOTE   = "Shift + Doppelklick zum Hinzufügen einer Notiz.",
-    MINIMAP_TOOLTIP      = "Klicken zum Öffnen · ziehen zum Verschieben",
+    MINIMAP_TOOLTIP      = "Klicken zum Öffnen - ziehen zum Verschieben",
+    MINIMAP_RIGHTCLICK   = "Rechtsklick zum %s",
+    MINIMAP_ENABLE       = "Aktivieren",
+    MINIMAP_DISABLE      = "Deaktivieren",
 }, { __index = L_enUS })
 
 -- ---------------------------------------------------------------------------
@@ -89,6 +113,12 @@ local L_deDE = setmetatable({
 -- ---------------------------------------------------------------------------
 local L_frFR = setmetatable({
     NO_SIGNUP_BTN        = "Bouton d'inscription introuvable.",
+    CONFLICT_TITLE       = "Conflit d'add-on",
+    CONFLICT_DETECTED    = "Impossible de s'inscrire. Un autre add-on qui gère les groupes Premade ou le LFG peut interférer. "
+        .. "Essayez de désactiver ces add-ons, puis tapez /reload.",
+    CONFLICT_INFO_TITLE  = "Détection des conflits",
+    CONFLICT_INFO_DESC   = "L'icône %s à côté d'une option indique qu'un conflit a été détecté.",
+    CONFLICT_INFO_HINT   = "Survolez l'icône, lorsqu'elle apparaît, pour comprendre le conflit.",
     ROLE_REQUIRED        = "Sélectionnez un rôle dans /slfg avant de vous inscrire.",
     ROLE_HEALER          = "Soignant",
     ADDON_ENABLED        = "SmartLFG activé.",
@@ -108,7 +138,10 @@ local L_frFR = setmetatable({
     OPTIONS_TIP_NOTE     = "Maj + double-clic sur une annonce pour ajouter une note.",
     TOOLTIP_QUICK_SIGNUP = "Double-cliquez pour vous inscrire rapidement.",
     TOOLTIP_SHIFT_NOTE   = "Maj + Double-clic pour ajouter une note.",
-    MINIMAP_TOOLTIP      = "Cliquez pour ouvrir · glissez pour déplacer",
+    MINIMAP_TOOLTIP      = "Cliquez pour ouvrir - glissez pour déplacer",
+    MINIMAP_RIGHTCLICK   = "Clic droit pour %s",
+    MINIMAP_ENABLE       = "activer",
+    MINIMAP_DISABLE      = "désactiver",
 }, { __index = L_enUS })
 
 -- ---------------------------------------------------------------------------
@@ -116,6 +149,12 @@ local L_frFR = setmetatable({
 -- ---------------------------------------------------------------------------
 local L_esES = setmetatable({
     NO_SIGNUP_BTN        = "No se encontró el botón de registro.",
+    CONFLICT_TITLE       = "Conflicto de complemento",
+    CONFLICT_DETECTED    = "No se pudo registrar. Otro complemento que gestiona grupos Premade o LFG puede estar interfiriendo. "
+        .. "Prueba a desactivar esos complementos y luego usa /reload.",
+    CONFLICT_INFO_TITLE  = "Detección de conflictos",
+    CONFLICT_INFO_DESC   = "El icono %s junto a una opción indica que se ha detectado un conflicto.",
+    CONFLICT_INFO_HINT   = "Pasa el cursor sobre el icono, cuando aparezca, para entender el conflicto.",
     ROLE_REQUIRED        = "Selecciona un rol en /slfg antes de apuntarte.",
     ROLE_TANK            = "Tanque",
     ROLE_HEALER          = "Sanador",
@@ -137,7 +176,10 @@ local L_esES = setmetatable({
     OPTIONS_TIP_NOTE     = "Mayús + doble clic en un anuncio para añadir una nota.",
     TOOLTIP_QUICK_SIGNUP = "Doble clic para apuntarte rápido.",
     TOOLTIP_SHIFT_NOTE   = "Shift + Doble clic para añadir una nota.",
-    MINIMAP_TOOLTIP      = "Clic para abrir · arrastra para mover",
+    MINIMAP_TOOLTIP      = "Clic para abrir - arrastra para mover",
+    MINIMAP_RIGHTCLICK   = "Clic derecho para %s",
+    MINIMAP_ENABLE       = "activar",
+    MINIMAP_DISABLE      = "desactivar",
 }, { __index = L_enUS })
 
 -- ---------------------------------------------------------------------------
@@ -145,6 +187,11 @@ local L_esES = setmetatable({
 -- ---------------------------------------------------------------------------
 local L_ruRU = setmetatable({
     NO_SIGNUP_BTN        = "Кнопка записи не найдена.",
+    CONFLICT_TITLE       = "Конфликт аддонов",
+    CONFLICT_DETECTED    = "Не удалось записаться. Другой аддон, управляющий группами Premade или LFG, может мешать. Попробуйте отключить эти аддоны, затем введите /reload.",
+    CONFLICT_INFO_TITLE  = "Обнаружение конфликтов",
+    CONFLICT_INFO_DESC   = "Значок %s рядом с опцией означает, что обнаружен конфликт.",
+    CONFLICT_INFO_HINT   = "Наведите курсор на значок, когда он появится, чтобы понять конфликт.",
     ROLE_REQUIRED        = "Выберите роль в /slfg перед записью.",
     ROLE_TANK            = "Танк",
     ROLE_HEALER          = "Целитель",
@@ -166,7 +213,10 @@ local L_ruRU = setmetatable({
     OPTIONS_TIP_NOTE     = "Shift + двойной щелчок по объявлению, чтобы добавить примечание.",
     TOOLTIP_QUICK_SIGNUP = "Двойной щелчок для быстрой записи.",
     TOOLTIP_SHIFT_NOTE   = "Shift + Двойной щелчок для добавления примечания.",
-    MINIMAP_TOOLTIP      = "Щелчок — открыть · перетаскивание — переместить",
+    MINIMAP_TOOLTIP      = "Щелчок — открыть - перетаскивание — переместить",
+    MINIMAP_RIGHTCLICK   = "Правый клик, чтобы %s",
+    MINIMAP_ENABLE       = "включить",
+    MINIMAP_DISABLE      = "отключить",
 }, { __index = L_enUS })
 
 -- ---------------------------------------------------------------------------
@@ -174,6 +224,11 @@ local L_ruRU = setmetatable({
 -- ---------------------------------------------------------------------------
 local L_ptBR = setmetatable({
     NO_SIGNUP_BTN        = "Botão de inscrição não encontrado.",
+    CONFLICT_TITLE       = "Conflito de addon",
+    CONFLICT_DETECTED    = "Não foi possível se inscrever. Outro addon que gerencia grupos Premade ou LFG pode estar interferindo. Tente desativar esses addons e depois use /reload.",
+    CONFLICT_INFO_TITLE  = "Detecção de conflitos",
+    CONFLICT_INFO_DESC   = "O ícone %s ao lado de uma opção indica que um conflito foi detectado.",
+    CONFLICT_INFO_HINT   = "Passe o cursor sobre o ícone, quando ele aparecer, para entender o conflito.",
     ROLE_REQUIRED        = "Selecione uma função em /slfg antes de se inscrever.",
     ROLE_TANK            = "Tanque",
     ROLE_HEALER          = "Curandeiro",
@@ -195,7 +250,10 @@ local L_ptBR = setmetatable({
     OPTIONS_TIP_NOTE     = "Shift + clique duplo em um anúncio para adicionar uma nota.",
     TOOLTIP_QUICK_SIGNUP = "Clique duplo para se inscrever rapidamente.",
     TOOLTIP_SHIFT_NOTE   = "Shift + Clique duplo para adicionar uma nota.",
-    MINIMAP_TOOLTIP      = "Clique para abrir · arraste para mover",
+    MINIMAP_TOOLTIP      = "Clique para abrir - arraste para mover",
+    MINIMAP_RIGHTCLICK   = "Clique direito para %s",
+    MINIMAP_ENABLE       = "ativar",
+    MINIMAP_DISABLE      = "desativar",
 }, { __index = L_enUS })
 
 -- ---------------------------------------------------------------------------
@@ -203,6 +261,12 @@ local L_ptBR = setmetatable({
 -- ---------------------------------------------------------------------------
 local L_itIT = setmetatable({
     NO_SIGNUP_BTN        = "Pulsante di iscrizione non trovato.",
+    CONFLICT_TITLE       = "Conflitto tra addon",
+    CONFLICT_DETECTED    = "Impossibile iscriversi. Un altro addon che gestisce i gruppi Premade o LFG potrebbe interferire. "
+        .. "Prova a disattivare quegli addon, poi usa /reload.",
+    CONFLICT_INFO_TITLE  = "Rilevamento dei conflitti",
+    CONFLICT_INFO_DESC   = "L'icona %s accanto a un'opzione indica che è stato rilevato un conflitto.",
+    CONFLICT_INFO_HINT   = "Passa il cursore sull'icona, quando appare, per capire il conflitto.",
     ROLE_REQUIRED        = "Seleziona un ruolo in /slfg prima di iscriverti.",
     ROLE_HEALER          = "Curatore",
     ADDON_ENABLED        = "SmartLFG abilitato.",
@@ -223,7 +287,10 @@ local L_itIT = setmetatable({
     OPTIONS_TIP_NOTE     = "Shift + doppio clic su un annuncio per aggiungere una nota.",
     TOOLTIP_QUICK_SIGNUP = "Doppio clic per iscriverti rapidamente.",
     TOOLTIP_SHIFT_NOTE   = "Shift + Doppio clic per aggiungere una nota.",
-    MINIMAP_TOOLTIP      = "Clic per aprire · trascina per spostare",
+    MINIMAP_TOOLTIP      = "Clic per aprire - trascina per spostare",
+    MINIMAP_RIGHTCLICK   = "Clic destro per %s",
+    MINIMAP_ENABLE       = "attivare",
+    MINIMAP_DISABLE      = "disattivare",
 }, { __index = L_enUS })
 
 -- ---------------------------------------------------------------------------

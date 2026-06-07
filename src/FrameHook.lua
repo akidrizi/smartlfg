@@ -217,6 +217,10 @@ function FH.HookLFGList()
     local appDialog = LFGListApplicationDialog
     if appDialog and not onShowHooked[appDialog] then
         appDialog:HookScript("OnShow", function()
+            -- The dialog opened: stamp the live sign-up token so the conflict
+            -- self-check knows our pipeline reached this point. Done before the
+            -- gates so it records regardless of mode/settings.
+            SmartLFG.RoleManager.NotifyDialogShown()
             if not SmartLFG.DB.Get("enabled") then return end
             if not SmartLFG.DB.Get("quickSignUp") then return end
             if not SmartLFG.IsPlayerSoloOrLeader() then return end

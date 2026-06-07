@@ -21,6 +21,51 @@ local noteText = ""
 function RM.GetNote()     return noteText end
 function RM.SetNote(text) noteText = text or "" end
 
+-- ── Behavioral conflict self-check ──────────────────────────────────────────
+-- We keep no static list of incompatible add-ons; we infer a clash from who
+-- drove the sign-up. The application dialog (LFGListApplicationDialog) opening
+-- is the anchor: its OnShow calls RM.NotifyDialogShown.
+--
+-- Two failure shapes, both reported via FlagConflict (once per session):
+--   A. The dialog opens but SmartLFG did NOT initiate it (no recent ApplyToGroup)
+--      AND it auto-closes immediately — i.e. another add-on's one-click sign-up
+--      (e.g. Premade Groups Filter) opened and submitted it, bypassing us. We
+--      require the auto-close so a human manually using Blizzard's own Sign Up
+--      button (dialog stays open to type/confirm) is NOT flagged.
+--   B. SmartLFG DID initiate (double-click → ApplyToGroup) but no dialog ever
+--      appears — something replaced/blocked our click.
+local INITIATE_WINDOW = 1.0   -- a sign-up we drove within this many seconds is "ours"
+local SETTLE_DELAY    = 0.3   -- a not-by-us dialog gone by now was auto-submitted
+local lastInitiated   = -100  -- GetTime() of our last ApplyToGroup (never, initially)
+local sawOurDialog    = false -- did the dialog open after our most recent initiate?
+local conflictDetected = false
+
+local function FlagConflict()
+    if conflictDetected then return end
+    conflictDetected = true
+    SmartLFG.Warn(SmartLFG.L.CONFLICT_DETECTED)   -- one-time chat warning
+    SmartLFG.Options.Refresh()                    -- surface the icon if the dialog is open
+end
+
+-- Called from the application dialog's OnShow.
+function RM.NotifyDialogShown()
+    if (GetTime() - lastInitiated) <= INITIATE_WINDOW then
+        sawOurDialog = true   -- our own double-click flow opened it (shape B is happy)
+        return
+    end
+    -- Opened without us. Flag only if it auto-closes (automation), not if it
+    -- stays open for a human (manual Blizzard sign-up).
+    C_Timer.After(SETTLE_DELAY, function()
+        local d = LFGListApplicationDialog
+        if d and d:IsShown() then return end
+        FlagConflict()
+    end)
+end
+
+-- Read by Options.lua to show the warning triangle by the OPTIONS header.
+-- Session state (a Lua local), so it clears on /reload or relog.
+function RM.HasConflict() return conflictDetected end
+
 -- ── First-run role pre-selection ────────────────────────────────────────────
 -- The very first time SmartLFG sees a character, seed the explicit DB selection
 -- (`selectedRoles`) so sign-up works out of the box. Runs once (guarded by the
@@ -75,7 +120,17 @@ function RM.ApplyToGroup(withNote)
     if not signUpBtn:IsEnabled() then return end
 
     RM.SetNoteMode(withNote)
+
+    -- Arm the conflict self-check (shape B): mark this as our initiation, then
+    -- verify the dialog actually opened. NotifyDialogShown sets sawOurDialog when
+    -- it fires within INITIATE_WINDOW; if it never does, our click was swallowed.
+    lastInitiated = GetTime()
+    sawOurDialog  = false
     signUpBtn:Click()
+    C_Timer.After(SETTLE_DELAY, function()
+        if sawOurDialog then return end   -- our dialog opened → no conflict
+        FlagConflict()
+    end)
 end
 
 -- ── LFD queue sign-up (double-click in the dungeon finder) ──────────────────

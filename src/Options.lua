@@ -13,6 +13,7 @@ local quickSignUpCheck -- toggles double-click sign-up + tooltip hint
 local autoAcceptCheck  -- toggles auto-accept of role checks
 local noteTip          -- bottom "Tip: …" line (greyed unless double-click sign-up is on)
 local tipDiamond       -- the gold diamond preceding the tip
+local conflictIcon     -- warning triangle by the OPTIONS header, shown on a detected addon conflict
 local roleButtons = {} -- role token -> button
 
 -- ── Layout ──────────────────────────────────────────────────────────────────
@@ -22,6 +23,8 @@ local PAD          = 16     -- content margin from the panel edges
 local ICON_SIZE    = 56     -- role button (ring) edge, in pixels
 local ICON_INNER   = 32     -- role icon inside the ring
 local ROLE_SPACING = 92     -- centre-to-centre distance between role buttons
+local OPT_ICON     = 14     -- status icon (e.g. conflict triangle) beside an option label
+local OPT_ICON_GAP = 4      -- label → status-icon gap; reserved on both toggles so they stay symmetric
 
 -- Vertical layout: offsets from the dialog's top edge (negative = downward).
 local ROLE_HEADER_Y = -62
@@ -237,24 +240,60 @@ local function BuildPanel()
         roleButtons[role] = btn
     end
 
-    -- Options section: two columns of toggles.
-    CreateSectionHeader(L.OPTIONS_SECTION, OPT_HEADER_Y)
+    -- Options section: two toggles laid out inline as one centred block (below).
+    -- Each reserves a status-icon slot after its label (OPT_ICON_GAP + OPT_ICON)
+    -- so the row stays symmetric — sign-up has a conflict triangle now, auto-accept
+    -- gets its own indicator later. A native quest icon by the header explains
+    -- those triangles on hover.
+    local optHeader = CreateSectionHeader(L.OPTIONS_SECTION, OPT_HEADER_Y)
+
+    local optInfo = CreateFrame("Button", nil, panel)
+    optInfo:SetSize(13, 13)
+    optInfo:SetPoint("LEFT", optHeader, "RIGHT", 2, 0)
+    local optInfoIcon = optInfo:CreateTexture(nil, "ARTWORK")
+    optInfoIcon:SetAllPoints()
+    optInfoIcon:SetTexture("Interface\\GossipFrame\\AvailableQuestIcon")
+    optInfo:SetScript("OnEnter", function(self)
+        local triangle = CreateAtlasMarkup("services-icon-warning", 14, 14)
+        GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
+        GameTooltip:AddLine(L.CONFLICT_INFO_TITLE, 1, 1, 1)
+        GameTooltip:AddLine(string.format(L.CONFLICT_INFO_DESC, triangle), 1, 0.82, 0, true)
+        GameTooltip:AddLine(L.CONFLICT_INFO_HINT, 1, 0.82, 0, true)
+        GameTooltip:Show()
+    end)
+    optInfo:SetScript("OnLeave", function() GameTooltip:Hide() end)
 
     quickSignUpCheck = CreateCheck(panel, "SmartLFGQuickSignUpCheck",
         "quickSignUp", L.OPTIONS_QUICKSIGNUP, L.OPTIONS_QUICKSIGNUP, L.OPTIONS_QUICKSIGNUP_DESC)
     autoAcceptCheck = CreateCheck(panel, "SmartLFGAutoAcceptCheck",
         "autoAccept", L.OPTIONS_AUTOACCEPT, L.OPTIONS_AUTOACCEPT, L.OPTIONS_AUTOACCEPT_DESC)
 
-    -- Center each toggle (checkbox + label) within its half of the content area,
-    -- so the pair reads as balanced rather than pinned to fixed columns.
-    local halfW = (PANEL_W - 2 * PAD) / 2
-    local function PlaceToggle(check, column)
-        local centerX = PAD + halfW * (column - 0.5)
-        local blockW  = check:GetWidth() + 4 + check.label:GetStringWidth()
-        check:SetPoint("TOPLEFT", panel, "TOPLEFT", centerX - blockW / 2, OPT_Y)
+    -- Lay the two toggles out inline as one block, then centre the whole block:
+    --   [ ] Double-click sign-up ^   [ ] Auto-accept role ^
+    -- Each toggle's width is checkbox + label + its reserved status-icon slot
+    -- (OPT_ICON_GAP + OPT_ICON), so the row stays balanced and symmetric.
+    local TOGGLE_GAP = 18    -- space between the two toggles
+    local function ToggleWidth(check)
+        return check:GetWidth() + 4 + check.label:GetStringWidth()
+            + OPT_ICON_GAP + OPT_ICON
     end
-    PlaceToggle(quickSignUpCheck, 1)
-    PlaceToggle(autoAcceptCheck, 2)
+    local w1, w2  = ToggleWidth(quickSignUpCheck), ToggleWidth(autoAcceptCheck)
+    local startX  = (PANEL_W - (w1 + TOGGLE_GAP + w2)) / 2
+    quickSignUpCheck:SetPoint("TOPLEFT", panel, "TOPLEFT", startX, OPT_Y)
+    autoAcceptCheck:SetPoint("TOPLEFT", panel, "TOPLEFT", startX + w1 + TOGGLE_GAP, OPT_Y)
+
+    -- Conflict warning triangle sits in the sign-up toggle's reserved icon slot
+    -- (just right of its label). Shown via O.Refresh → RoleManager.HasConflict
+    -- when the self-check finds another add-on drove the sign-up; hover repeats
+    -- the chat warning. Clears on /reload — the flag is session state.
+    conflictIcon = CreateFrame("Button", nil, panel)
+    conflictIcon:SetSize(OPT_ICON, OPT_ICON)
+    conflictIcon:SetPoint("LEFT", quickSignUpCheck.label, "RIGHT", OPT_ICON_GAP, 0)
+    local conflictTex = conflictIcon:CreateTexture(nil, "ARTWORK")
+    conflictTex:SetAllPoints()
+    conflictTex:SetAtlas("services-icon-warning")
+    WireTooltip(conflictIcon, L.CONFLICT_TITLE, L.CONFLICT_DETECTED)
+    conflictIcon:Hide()
 
     -- Bottom tip (reuses the tooltip-hint string), prefixed with a small gold
     -- diamond. Greyed unless double-click sign-up is active — see O.Refresh.
@@ -290,6 +329,11 @@ function O.Refresh()
     if enabled then r, g, b = 1, 0.82, 0 end
     quickSignUpCheck.label:SetTextColor(r, g, b)
     autoAcceptCheck.label:SetTextColor(r, g, b)
+
+    -- Show the conflict warning triangle once the self-check has flagged a clash.
+    if conflictIcon then
+        conflictIcon:SetShown(SmartLFG.RoleManager.HasConflict())
+    end
 
     -- The note tip only applies when double-click sign-up is actually running.
     if enabled and SmartLFG.DB.Get("quickSignUp") then

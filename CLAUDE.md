@@ -29,9 +29,9 @@ button.
 
 The UI is a **standalone movable dialog** (dark backdrop, gold border, close X,
 ESC-closable, drag to reposition), opened by `/slfg` or by a **native minimap button**
-(left-click toggles it; drag the button around the minimap ring — its angle persists
-per-character in `minimapAngle`; the button hugs round, square or cornered minimaps via
-`GetMinimapShape()`). Layout (top → bottom): a header with a branded round icon then the
+(left-click toggles it; right-click toggles the master Enable switch; drag the button
+around the minimap ring — its angle persists per-character in `minimapAngle`; the button
+hugs round, square or cornered minimaps via `GetMinimapShape()`). Layout (top → bottom): a header with a branded round icon then the
 cyan name + grey version top-left, and the master **Enable** check on the version row,
 top-right; a **SIGN-UP
 ROLES** section (white small-caps header) with three centered circular role icons
@@ -100,9 +100,9 @@ cross-module calls happen inside function bodies, which run only after every fil
 | `Locale.lua` | All user-visible strings (`SmartLFG.L`). `L_enUS` is the authoritative base; `deDE/frFR/esES/ruRU/ptBR/itIT` metatable-fallback to it (`esMX`→`esES`). |
 | `Database.lua` | `SmartLFGDB` access via `DB.Get`/`DB.Set` only. Per-character. `SCHEMA_VERSION = 9`; keys are `enabled`, `quickSignUp`, `autoAccept`, `roleInitialized`, `minimapAngle`, `selectedRoles` (+ `schemaVersion`). |
 | `Util.lua` | Stateless helpers: `Print`, `Warn`, `GetAddonVersion`, and the role model (`GetAvailableRoles`, `GetNativeRoles`, `GetSelectedRoles`, `GetCurrentSpecRole`, `GetCurrentSpecName`, `ToggleRole`, `ResolveSignUpRoles`, `ApplyResolvedRoles`, `GetRoleName`), plus `IsPlayerSoloOrLeader`. |
-| `Minimap.lua` | Native, hand-rolled minimap button (no libraries; icon `media/minimap_64.png`, circular-masked). `M.Create()` builds it once; left-click calls `Options.Toggle()`, drag repositions it (angle saved in the `minimapAngle` DB key). `UpdatePosition` clamps the button to the minimap edge using `GetMinimapShape()` + a `MINIMAP_SHAPES` quadrant table, so it follows round/square/cornered minimaps (the LibDBIcon approach, library-free). |
-| `Options.lua` | The standalone options dialog (movable `BackdropTemplate` frame, dark backdrop, close X, ESC-closable). Header (branded `media/minimap_64.png` icon + name/version + Enable; the header icon is a button that toggles the Group Finder via `ToggleLFDParentFrame` — an easter egg), a SIGN-UP ROLES section (its header carries a turn-in icon — `GossipFrame\ActiveQuestIcon` — whose hover tooltip names the spec-role fallback) of three circular role buttons with labels, an OPTIONS section of two-column toggles, and a bottom Tip line; help text is hover-tooltip only. Also builds the tiny Settings → AddOns stub that opens the dialog. `O.Register()`, `O.Open()`, `O.Toggle()`, `O.Refresh()`; `CreateCheck` builds one DB-bound checkbox (label + tooltip), `CreateRoleButton` builds one ringed role icon, `CreateSectionHeader`/`WireTooltip` are layout helpers. |
-| `RoleManager.lua` | Behaviors: `ApplyToGroup` (premade sign-up; resolves + applies roles first), `SignUp` (LFD queue — legacy), `AutoAcceptRoleCheck` (gated by the `autoAccept` DB key), `PreselectRoleFromSpec` (first-run seeding of `selectedRoles`), and the session note (`GetNote`/`SetNote`) + note mode for Shift. |
+| `Minimap.lua` | Native, hand-rolled minimap button (no libraries; icon `media/minimap_64.png`, circular-masked). `M.Create()` builds it once; left-click calls `Options.Toggle()`, right-click flips the `enabled` DB key (mirrors `/slfg on\|off`, with chat feedback) and refreshes the tooltip, drag repositions it (angle saved in the `minimapAngle` DB key). The tooltip (`ShowTooltip`) shows the drag/open hint plus a right-click line that flips green "Enable" / red "Disable" with the current state. `UpdatePosition` clamps the button to the minimap edge using `GetMinimapShape()` + a `MINIMAP_SHAPES` quadrant table, so it follows round/square/cornered minimaps (the LibDBIcon approach, library-free). |
+| `Options.lua` | The standalone options dialog (movable `BackdropTemplate` frame, dark backdrop, close X, ESC-closable). Header (branded `media/minimap_64.png` icon + name/version + Enable; the header icon is a button that toggles the Group Finder via `ToggleLFDParentFrame` — an easter egg), a SIGN-UP ROLES section (its header carries a turn-in icon — `GossipFrame\ActiveQuestIcon` — whose hover tooltip names the spec-role fallback) of three circular role buttons with labels, an OPTIONS section (its header carries a native quest icon — `GossipFrame\AvailableQuestIcon` — whose hover tooltip, `CONFLICT_INFO_*`, explains the per-option conflict triangles) whose two toggles sit inline as one centred block (each reserves a status-icon slot after its label — `OPT_ICON`/`OPT_ICON_GAP`, plus `TOGGLE_GAP` between them — so the row stays symmetric; the Double-click sign-up toggle carries a `services-icon-warning` triangle, hidden until the conflict self-check fires, whose tooltip repeats `CONFLICT_DETECTED`; the auto-accept slot is reserved for a future indicator), and a bottom Tip line; help text is hover-tooltip only. Also builds the tiny Settings → AddOns stub that opens the dialog. `O.Register()`, `O.Open()`, `O.Toggle()`, `O.Refresh()`; `CreateCheck` builds one DB-bound checkbox (label + tooltip), `CreateRoleButton` builds one ringed role icon, `CreateSectionHeader`/`WireTooltip` are layout helpers. |
+| `RoleManager.lua` | Behaviors: `ApplyToGroup` (premade sign-up; resolves + applies roles first, then arms the conflict self-check), `SignUp` (LFD queue — legacy), `AutoAcceptRoleCheck` (gated by the `autoAccept` DB key), `PreselectRoleFromSpec` (first-run seeding of `selectedRoles`), the session note (`GetNote`/`SetNote`) + note mode for Shift, and the conflict self-check (`NotifyDialogShown` from the application dialog's OnShow, `HasConflict` read by Options). |
 | `FrameHook.lua` | Hooks the LFG UI: premade row double-click + tooltip + application-dialog auto-submit (all gated by the `quickSignUp` DB key), note hold-open / deferred note restore, and the LFD dungeon-list double-click. |
 | `Commands.lua` | `/slfg` (opens the dialog) and `/slfg on\|off`. |
 | `Core.lua` | Entry point: registers events, holds the enabled-gate, calls `Options.Register()` and `Minimap.Create()`. |
@@ -128,6 +128,20 @@ search panel's Sign Up button (opens the dialog) → the dialog's `OnShow` hook 
 auto-submits (plain) or holds it open for a note (Shift). **All of this is synchronous
 inside the hardware-click event** so the protected `ApplyToGroup` is allowed. We never
 `SetText`/`SetChecked` the secure dialog — that taints and blocks the sign-up.
+
+**Conflict self-check.** No static incompatible-addon list — we infer a clash from *who*
+drives the sign-up, anchored on the application dialog opening (`OnShow` →
+`RoleManager.NotifyDialogShown`). `ApplyToGroup` records `lastInitiated`/`sawOurDialog`.
+Two failure shapes both call `FlagConflict` (once per session): **(A)** the dialog opens
+but we didn't initiate it (no `ApplyToGroup` within `INITIATE_WINDOW`) *and* it auto-closes
+within `SETTLE_DELAY` — another addon's one-click sign-up (e.g. Premade Groups Filter) drove
+and submitted it, bypassing us; the auto-close requirement avoids flagging a human using
+Blizzard's own Sign Up button (dialog stays open). **(B)** we *did* initiate but no dialog
+ever appears (`sawOurDialog` stays false) — our click was replaced/blocked. `FlagConflict`
+emits a one-time `Warn(CONFLICT_DETECTED)` and calls `Options.Refresh()`;
+`RoleManager.HasConflict()` exposes the latched flag so `Options.lua` shows a warning
+triangle beside the OPTIONS header. The flag is a Lua session local, so the chat warning
+and the icon both reset on `/reload` or relog.
 
 ---
 
