@@ -16,7 +16,7 @@ local L_enUS = {
     WELCOME              = "v%s  -  /slfg",
 
     -- Premade sign-up
-    NO_SIGNUP_BTN        = "Could not find the sign-up button.",
+    NO_SIGNUP_BTN        = "Could not find the sign up button.",
 
     -- Behavioral conflict self-check: our sign-up pipeline didn't open the
     -- application dialog, so another sign-up add-on likely drove it first.
@@ -47,11 +47,11 @@ local L_enUS = {
     OPTIONS_ENABLE_SHORT = "Enable",
     -- %s placeholders are the chat commands; the caller colors them (Options.lua).
     OPTIONS_ENABLE_DESC  = "Master switch for all SmartLFG features.\nToggle anytime with %s or %s.",
-    OPTIONS_QUICKSIGNUP      = "Couldn't sign up. Another add-on that manages Premade Groups or LFG may be getting in the way. Try disabling those add-ons, then use /reload.",
-    OPTIONS_QUICKSIGNUP_DESC = "Double-click on a Premade Group listing to quickly sign-up.",
+    OPTIONS_QUICKSIGNUP      = "Double-click sign up",
+    OPTIONS_QUICKSIGNUP_DESC = "Double-click on a Premade Group listing to quickly sign up.",
     OPTIONS_AUTOACCEPT       = "Auto-accept role",
     OPTIONS_AUTOACCEPT_DESC  = "Automatically accept the role check pop-up when the group leader queues up the group.",
-    OPTIONS_ROLE         = "Sign-up roles",
+    OPTIONS_ROLE         = "Sign up roles",
     -- Roles-section fallback tooltip. _TITLE is the white first line; the second
     -- line's %s are the spec's role icon and the class-colored spec name.
     OPTIONS_ROLE_INFO_TITLE = "None Selected",
