@@ -81,6 +81,7 @@ EXCLUDES=(
     '.git'
     '.github'
     '.idea'
+    '.claude'
     'docs'
     'dist'
     'CLAUDE.md'
