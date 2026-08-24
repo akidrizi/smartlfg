@@ -11,6 +11,7 @@ local stub             -- tiny Settings → AddOns placeholder that opens the di
 local enabledCheck     -- the master enable checkbox
 local quickSignUpCheck -- toggles double-click sign-up + tooltip hint
 local autoAcceptCheck  -- toggles auto-accept of role checks
+local enhancedListingCheck -- toggles the Dungeons season filter + Mythic+/Competitive pre-select
 local noteTip          -- bottom "Tip: …" line (greyed unless double-click sign-up is on)
 local tipDiamond       -- the gold diamond preceding the tip
 local conflictIcon     -- warning triangle by the OPTIONS header, shown on a detected addon conflict
@@ -18,7 +19,7 @@ local roleButtons = {} -- role token -> button
 
 -- ── Layout ──────────────────────────────────────────────────────────────────
 local PANEL_W      = 380
-local PANEL_H      = 260
+local PANEL_H      = 284
 local PAD          = 16     -- content margin from the panel edges
 local ICON_SIZE    = 56     -- role button (ring) edge, in pixels
 local ICON_INNER   = 32     -- role icon inside the ring
@@ -31,7 +32,8 @@ local ROLE_HEADER_Y = -62
 local ROLE_Y        = -82
 local OPT_HEADER_Y  = -170
 local OPT_Y         = -188
-local TIP_Y         = -230
+local OPT_Y2        = -212  -- second options row (enhanced-listing toggle)
+local TIP_Y         = -254
 
 -- ── Shared helpers ──────────────────────────────────────────────────────────
 -- Show a title + wrapped description in a tooltip while hovering a frame.
@@ -173,8 +175,16 @@ local function BuildPanel()
     logoButton:SetSize(36, 36)
     logoButton:SetPoint("TOPLEFT", panel, "TOPLEFT", PAD, -12)
     logoButton:RegisterForClicks("LeftButtonUp")
+    -- Opens straight to Group Finder → Premade Groups rather than the Dungeon
+    -- Finder tab. The selection is passed as a *string*: PVEFrame_ShowFrame
+    -- dereferences it via _G after loading Blizzard_GroupFinder, so this works
+    -- even when LFGListPVEStub doesn't exist yet.
     logoButton:SetScript("OnClick", function()
-        if ToggleLFDParentFrame then ToggleLFDParentFrame() end
+        if PVEFrame_ToggleFrame then
+            PVEFrame_ToggleFrame("GroupFinderFrame", "LFGListPVEStub")
+        elseif ToggleLFDParentFrame then
+            ToggleLFDParentFrame()
+        end
     end)
     logoButton:SetScript("OnEnter", function(self) self:SetAlpha(0.8) end)
     logoButton:SetScript("OnLeave", function(self) self:SetAlpha(1) end)
@@ -282,6 +292,17 @@ local function BuildPanel()
     quickSignUpCheck:SetPoint("TOPLEFT", panel, "TOPLEFT", startX, OPT_Y)
     autoAcceptCheck:SetPoint("TOPLEFT", panel, "TOPLEFT", startX + w1 + TOGGLE_GAP, OPT_Y)
 
+    -- Third toggle (Dungeons "Enhanced listing") sits alone on its own centred
+    -- row beneath the first two. The difficulty/playstyle names in its tooltip
+    -- carry the addon's cyan, added here — the locale string holds no colors.
+    local enhancedDesc = string.format(L.OPTIONS_ENHANCED_DESC,
+        C.ADDON .. L.OPTIONS_ENHANCED_MYTHIC .. C.RESET,
+        C.ADDON .. L.OPTIONS_ENHANCED_COMPETITIVE .. C.RESET)
+    enhancedListingCheck = CreateCheck(panel, "SmartLFGEnhancedListingCheck",
+        "enhancedListing", L.OPTIONS_ENHANCED, L.OPTIONS_ENHANCED, enhancedDesc)
+    local w3 = ToggleWidth(enhancedListingCheck)
+    enhancedListingCheck:SetPoint("TOPLEFT", panel, "TOPLEFT", (PANEL_W - w3) / 2, OPT_Y2)
+
     -- Conflict warning triangle sits in the sign-up toggle's reserved icon slot
     -- (just right of its label). Shown via O.Refresh → RoleManager.HasConflict
     -- when the self-check finds another add-on drove the sign-up; hover repeats
@@ -321,19 +342,27 @@ function O.Refresh()
     -- switch is off, so it's clear they have no effect.
     quickSignUpCheck:SetChecked(SmartLFG.DB.Get("quickSignUp") and true or false)
     autoAcceptCheck:SetChecked(SmartLFG.DB.Get("autoAccept") and true or false)
+    enhancedListingCheck:SetChecked(SmartLFG.DB.Get("enhancedListing") and true or false)
     quickSignUpCheck:SetEnabled(enabled)
     autoAcceptCheck:SetEnabled(enabled)
+    enhancedListingCheck:SetEnabled(enabled)
 
     -- Grey the option labels while the master switch is off.
     local r, g, b = 0.5, 0.5, 0.5
     if enabled then r, g, b = 1, 0.82, 0 end
     quickSignUpCheck.label:SetTextColor(r, g, b)
     autoAcceptCheck.label:SetTextColor(r, g, b)
+    enhancedListingCheck.label:SetTextColor(r, g, b)
 
     -- Show the conflict warning triangle once the self-check has flagged a clash.
     if conflictIcon then
         conflictIcon:SetShown(SmartLFG.RoleManager.HasConflict())
     end
+
+    -- Push the Enhanced-listing setting into an already-open Group Finder
+    -- creation form, so ticking/unticking it applies immediately instead of on
+    -- the next /reload. No-ops when that form isn't open.
+    SmartLFG.GroupCreation.Refresh()
 
     -- The note tip only applies when double-click sign-up is actually running.
     if enabled and SmartLFG.DB.Get("quickSignUp") then

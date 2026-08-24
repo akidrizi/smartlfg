@@ -3,7 +3,7 @@ Stop clicking through menus — double-click any Premade listing and you're sign
 SmartLFG makes applying to groups instant, native, and effortless.
 
 <p align="center">
-  <img src="media/options-menu.png" alt="Tooltip hint on a listing">
+  <img src="docs/assets/options-menu.png" alt="Tooltip hint on a listing">
 </p>
 
 
@@ -13,6 +13,7 @@ SmartLFG makes applying to groups instant, native, and effortless.
 * **Shift + double-click** to open the application and add a note before submitting.
 * **Auto-accept** the role check popup when the leader queues the group.
 * **Conflict detection** — if another add-on hijacks the Premade sign-up, SmartLFG warns you and flags the affected option with a ▲ icon, so you know why it stopped working.
+* **Enhanced Premade Groups:** create premade groups easier and faster.
 * Open **Options menu** from the minimap or with the command `/slfg` to: **choose role** & **toggle features**.
 * Multilingual support: 🇬🇧 `English`, 🇩🇪 `German`, 🇫🇷 `French`, 🇪🇸 `Spanish`, 🇷🇺 `Russian`, 🇧🇷 `Portuguese (Brazil)`, 🇮🇹 `Italian`
 

@@ -51,6 +51,13 @@ local L_enUS = {
     OPTIONS_QUICKSIGNUP_DESC = "Double-click on a Premade Group listing to quickly sign up.",
     OPTIONS_AUTOACCEPT       = "Auto-accept role",
     OPTIONS_AUTOACCEPT_DESC  = "Automatically accept the role check pop-up when the group leader queues up the group.",
+    OPTIONS_ENHANCED      = "Enhanced Premade Groups",
+    -- What it does, then a blank line, then the pre-selection note. The %s are
+    -- the difficulty and playstyle names below, colored by the caller (Options.lua).
+    OPTIONS_ENHANCED_DESC = "Premade Groups made easier. Dungeon dropdown displays only the dungeons of the current season."
+        .. "\n\nPre-selects Difficulty: %s & Playstyle: %s when available.",
+    OPTIONS_ENHANCED_MYTHIC      = "Mythic+",
+    OPTIONS_ENHANCED_COMPETITIVE = "Competitive",
     OPTIONS_ROLE         = "Sign up roles",
     -- Roles-section fallback tooltip. _TITLE is the white first line; the second
     -- line's %s are the spec's role icon and the class-colored spec name.
@@ -94,6 +101,11 @@ local L_deDE = setmetatable({
     OPTIONS_QUICKSIGNUP_DESC = "Auf einen Eintrag der Vorgefertigten Gruppen doppelklicken, um sich schnell anzumelden.",
     OPTIONS_AUTOACCEPT       = "Rolle autom. annehmen",
     OPTIONS_AUTOACCEPT_DESC  = "Akzeptiert die Rollenüberprüfung automatisch, wenn der Gruppenanführer die Gruppe anmeldet.",
+    OPTIONS_ENHANCED      = "Erweiterte vorgefertigte Gruppen",
+    OPTIONS_ENHANCED_DESC = "Vorgefertigte Gruppen leichter gemacht. Die Verlies-Auswahl zeigt nur die Verliese der aktuellen Saison."
+        .. "\n\nWählt Schwierigkeit: %s & Spielstil: %s vor, sofern verfügbar.",
+    OPTIONS_ENHANCED_MYTHIC      = "Mythisch+",
+    OPTIONS_ENHANCED_COMPETITIVE = "Kompetitiv",
     OPTIONS_ROLE         = "Anmelderollen",
     OPTIONS_ROLE_INFO_TITLE = "Keine ausgewählt",
     OPTIONS_ROLE_INFO       = "Verwendet die Rolle der aktuellen Spezialisierung (%s %s).",
@@ -131,6 +143,11 @@ local L_frFR = setmetatable({
     OPTIONS_QUICKSIGNUP_DESC = "Double-cliquez sur une annonce de groupe prédéfini pour vous inscrire rapidement.",
     OPTIONS_AUTOACCEPT       = "Accepter le rôle auto.",
     OPTIONS_AUTOACCEPT_DESC  = "Accepte automatiquement la vérification des rôles lorsque le chef de groupe inscrit le groupe.",
+    OPTIONS_ENHANCED      = "Groupes prédéfinis améliorés",
+    OPTIONS_ENHANCED_DESC = "Les groupes prédéfinis en plus simple. La liste des donjons n'affiche que ceux de la saison en cours."
+        .. "\n\nPrésélectionne la difficulté : %s et le style de jeu : %s, si disponibles.",
+    OPTIONS_ENHANCED_MYTHIC      = "Mythique+",
+    OPTIONS_ENHANCED_COMPETITIVE = "Compétitif",
     OPTIONS_ROLE         = "Rôles d'inscription",
     OPTIONS_ROLE_INFO_TITLE = "Aucun sélectionné",
     OPTIONS_ROLE_INFO       = "Utilise le rôle de la spécialisation actuelle (%s %s).",
@@ -168,6 +185,11 @@ local L_esES = setmetatable({
     OPTIONS_QUICKSIGNUP_DESC = "Haz doble clic en un anuncio de Grupo predefinido para apuntarte rápidamente.",
     OPTIONS_AUTOACCEPT       = "Aceptar rol automát.",
     OPTIONS_AUTOACCEPT_DESC  = "Acepta automáticamente la comprobación de rol cuando el líder apunta al grupo.",
+    OPTIONS_ENHANCED      = "Grupos predefinidos mejorados",
+    OPTIONS_ENHANCED_DESC = "Los grupos predefinidos, más fáciles. La lista de mazmorras muestra solo las de la temporada actual."
+        .. "\n\nPreselecciona la dificultad: %s y el estilo de juego: %s, cuando estén disponibles.",
+    OPTIONS_ENHANCED_MYTHIC      = "Mítica+",
+    OPTIONS_ENHANCED_COMPETITIVE = "Competitivo",
     OPTIONS_ROLE         = "Roles de inscripción",
     OPTIONS_ROLE_INFO_TITLE = "Ninguno seleccionado",
     OPTIONS_ROLE_INFO       = "Usa el rol de la especialización actual (%s %s).",
@@ -205,6 +227,11 @@ local L_ruRU = setmetatable({
     OPTIONS_QUICKSIGNUP_DESC = "Дважды щёлкните по объявлению готовой группы, чтобы быстро записаться.",
     OPTIONS_AUTOACCEPT       = "Авто-принятие роли",
     OPTIONS_AUTOACCEPT_DESC  = "Автоматически принимает проверку ролей, когда лидер записывает группу.",
+    OPTIONS_ENHANCED      = "Улучшенные готовые группы",
+    OPTIONS_ENHANCED_DESC = "Готовые группы стали проще. В списке подземелий отображаются только подземелья текущего сезона."
+        .. "\n\nПредварительно выбирает сложность: %s и стиль игры: %s, если доступны.",
+    OPTIONS_ENHANCED_MYTHIC      = "Мифический+",
+    OPTIONS_ENHANCED_COMPETITIVE = "Соревновательный",
     OPTIONS_ROLE         = "Роли для записи",
     OPTIONS_ROLE_INFO_TITLE = "Ничего не выбрано",
     OPTIONS_ROLE_INFO       = "Использует роль текущей специализации (%s %s).",
@@ -242,6 +269,11 @@ local L_ptBR = setmetatable({
     OPTIONS_QUICKSIGNUP_DESC = "Clique duas vezes em um anúncio de Grupo Pré-formado para se inscrever rapidamente.",
     OPTIONS_AUTOACCEPT       = "Auto-aceitar função",
     OPTIONS_AUTOACCEPT_DESC  = "Aceita automaticamente a verificação de função quando o líder inscreve o grupo.",
+    OPTIONS_ENHANCED      = "Grupos pré-formados aprimorados",
+    OPTIONS_ENHANCED_DESC = "Grupos pré-formados de forma mais fácil. A lista de masmorras exibe apenas as da temporada atual."
+        .. "\n\nPré-seleciona a dificuldade: %s e o estilo de jogo: %s, quando disponíveis.",
+    OPTIONS_ENHANCED_MYTHIC      = "Mítico+",
+    OPTIONS_ENHANCED_COMPETITIVE = "Competitivo",
     OPTIONS_ROLE         = "Funções de inscrição",
     OPTIONS_ROLE_INFO_TITLE = "Nenhuma selecionada",
     OPTIONS_ROLE_INFO       = "Usa a função da especialização atual (%s %s).",
@@ -279,6 +311,11 @@ local L_itIT = setmetatable({
     OPTIONS_QUICKSIGNUP_DESC = "Fai doppio clic su un annuncio di Gruppo Predefinito per iscriverti rapidamente.",
     OPTIONS_AUTOACCEPT       = "Accetta ruolo auto.",
     OPTIONS_AUTOACCEPT_DESC  = "Accetta automaticamente il controllo dei ruoli quando il capogruppo iscrive il gruppo.",
+    OPTIONS_ENHANCED      = "Gruppi predefiniti avanzati",
+    OPTIONS_ENHANCED_DESC = "I gruppi predefiniti resi più facili. L'elenco dei dungeon mostra solo quelli della stagione attuale."
+        .. "\n\nPreseleziona la difficoltà: %s e lo stile di gioco: %s, quando disponibili.",
+    OPTIONS_ENHANCED_MYTHIC      = "Mitica+",
+    OPTIONS_ENHANCED_COMPETITIVE = "Competitivo",
     OPTIONS_ROLE         = "Ruoli d'iscrizione",
     OPTIONS_ROLE_INFO_TITLE = "Nessuno selezionato",
     OPTIONS_ROLE_INFO       = "Usa il ruolo della specializzazione attuale (%s %s).",

@@ -1,6 +1,6 @@
 local _, SmartLFG = ...
 
-local SCHEMA_VERSION = 9
+local SCHEMA_VERSION = 12
 
 local DEFAULTS = {
     schemaVersion   = SCHEMA_VERSION,
@@ -11,6 +11,9 @@ local DEFAULTS = {
     roleInitialized = false,
     -- Minimap button position, in degrees around the minimap ring.
     minimapAngle    = 200,
+    -- "Enhanced listing": filter the Dungeons dropdown to the current Mythic+
+    -- season and pre-select Mythic+ / Competitive (see GroupCreation).
+    enhancedListing = true,
 }
 
 SmartLFG.DB = {}
@@ -34,6 +37,34 @@ function SmartLFG.DB.Init()
         if from < 9 then
             SmartLFGDB.selectedRoles   = SmartLFGDB.selectedRoles or {}
             SmartLFGDB.roleInitialized = false
+        end
+
+        -- v10: `dungeonListing` (the remembered Dungeons creation-form snapshot)
+        -- is written lazily on first "List Group" click, so it needs no seeding
+        -- here — it's simply nil (no memory yet) until then. Nothing to migrate.
+
+        -- v11: `dungeonListing`'s shape changed (dropped groupID/requirement
+        -- fields, added difficultyName) while iterating on GroupCreation. A
+        -- pre-v11 snapshot's leftover `generalPlaystyle` value (captured before
+        -- the Mythic+/Competitive baseline existed) would otherwise silently
+        -- override the new baseline — 0 (Enum.LFGEntryGeneralPlaystyle.None) is
+        -- truthy in Lua, so even a "nothing selected" snapshot read as
+        -- "remembered". Discard it outright.
+        if from < 11 then
+            SmartLFGDB.dungeonListing = nil
+        end
+
+        -- v12: "Remember listing" became "Enhanced listing" — the option now
+        -- gates the season filter + Mythic+/Competitive pre-selection, and the
+        -- remember-the-last-listing behavior (with its `dungeonListing` store)
+        -- is gone entirely. Carry the player's on/off choice across the rename
+        -- rather than silently re-enabling it for anyone who turned it off.
+        if from < 12 then
+            if SmartLFGDB.rememberDungeonListing ~= nil then
+                SmartLFGDB.enhancedListing = SmartLFGDB.rememberDungeonListing
+            end
+            SmartLFGDB.rememberDungeonListing = nil
+            SmartLFGDB.dungeonListing = nil
         end
 
         -- Legacy single-role key (pre-v8); never reinstated.

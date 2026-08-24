@@ -1,6 +1,16 @@
 SmartLFG Changelog
 ==================
 
+2.2.0
+-----
+- New option: Enhanced Premade Groups (on by default, toggle in /slfg) — makes starting a Dungeons premade group quicker. Applies to Dungeons only; every other Premade category is left untouched.
+- The dungeon dropdown now lists only the current Mythic+ season's dungeons. "More..." still opens Blizzard's full, unfiltered list, so nothing is out of reach.
+- Mythic+ difficulty and the Competitive playstyle are pre-selected for you, and Mythic+ is re-applied whenever you switch dungeon — picking another difficulty by hand still sticks.
+- Turning the option off restores Blizzard's stock behavior straight away, with no /reload.
+- The options panel icon now opens the Group Finder straight to Premade Groups instead of the Dungeon Finder tab.
+- Fix: SmartLFG's Group Finder hooks were tied to a Blizzard addon name that has since changed, so they silently failed to install unless you browsed for groups first.
+- Smaller download: dropped about 1 MB of unused artwork that was still being packaged.
+
 2.1.0
 -----
 - New: conflict detection — SmartLFG now notices when another add-on hijacks the Premade sign-up, warns you once in chat, and marks the affected option with a ▲ icon in /slfg.

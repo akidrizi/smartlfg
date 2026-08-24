@@ -2,6 +2,10 @@ local addonName, SmartLFG = ...
 
 local frame = CreateFrame("Frame", "SmartLFGCoreFrame", UIParent)
 
+-- Set once our own ADDON_LOADED has run (DB + UI ready), so the frame-hooking
+-- attempts below never fire against an uninitialized DB.
+local ready = false
+
 frame:RegisterEvent("ADDON_LOADED")
 frame:RegisterEvent("PLAYER_LOGIN")
 frame:RegisterEvent("LFG_ROLE_CHECK_SHOW")
@@ -15,9 +19,19 @@ frame:SetScript("OnEvent", function(_, event, ...)
             SmartLFG.Options.Register()
             SmartLFG.Minimap.Create()
             SmartLFG.Print(string.format(SmartLFG.L.WELCOME, SmartLFG.GetAddonVersion()))
-        elseif loaded == "Blizzard_LFGList" then
+            ready = true
+        end
+
+        -- Hook the LFG frames as soon as they exist, whichever addon supplied
+        -- them. Matching on a fixed addon name is a trap: Blizzard renames these
+        -- across expansions (the Premade Groups UI moved from `Blizzard_LFGList`
+        -- to `Blizzard_GroupFinder`), and a stale name fails *silently* — the
+        -- hooks simply never install. Both calls are idempotent (guarded by
+        -- FrameHook's `hookedFrames`/`onShowHooked` tables) and no-op while their
+        -- frames don't exist yet, so retrying on every ADDON_LOADED is cheap and
+        -- name-proof.
+        if ready then
             SmartLFG.FrameHook.HookLFGList()
-        elseif loaded == "Blizzard_LookingForGroup" then
             SmartLFG.FrameHook.HookLFD()
         end
 

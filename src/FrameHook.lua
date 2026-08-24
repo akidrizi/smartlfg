@@ -11,6 +11,7 @@ local hookedFrames    = {}
 local onShowHooked    = {}
 local scrollBoxHooked = {}
 local tooltipHooked   = {}
+local creationHooked  = false  -- one-shot guard for the GroupCreation function hooks
 local TOOLTIP_OWNER_MAX_DEPTH = 6
 
 local function GetPremadeResultID(frame)
@@ -252,6 +253,36 @@ function FH.HookLFGList()
         end
 
         onShowHooked[appDialog] = true
+    end
+
+    -- Group creation (Dungeons): "Enhanced listing" pre-selects Mythic+ and a
+    -- Competitive playstyle on "Start a Group". See GroupCreation.
+    local entryCreation = frame.EntryCreation
+    if entryCreation and not onShowHooked[entryCreation] then
+        entryCreation:HookScript("OnShow", SmartLFG.GroupCreation.OnEntryCreationShow)
+        onShowHooked[entryCreation] = true
+    end
+
+    -- Two global-function hooks for the creation form. These are separate from
+    -- the frame hooks above because Blizzard re-runs both on its own schedule
+    -- (dropdown rebuilds, every selection change), so hooking the functions is
+    -- the only way to stay applied:
+    --   Select            → re-assert Mythic+ when the player switches dungeon
+    --   SetupGroupDropdown → trim the dungeon list to the current M+ season
+    -- Guarded by a one-shot flag since hooksecurefunc stacks on every call, and
+    -- by an existence check on both globals — hooksecurefunc raises an error on
+    -- a name that isn't a function, so a Blizzard rename must degrade to "these
+    -- two behaviors are off", never to a Lua error on login.
+    if not creationHooked and hooksecurefunc
+        and LFGListEntryCreation_Select and LFGListEntryCreation_SetupGroupDropdown
+    then
+        hooksecurefunc("LFGListEntryCreation_Select", function(...)
+            SmartLFG.GroupCreation.OnSelect(...)
+        end)
+        hooksecurefunc("LFGListEntryCreation_SetupGroupDropdown", function(...)
+            SmartLFG.GroupCreation.OnSetupGroupDropdown(...)
+        end)
+        creationHooked = true
     end
 
     return true

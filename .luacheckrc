@@ -45,7 +45,6 @@ globals = {
     -- In-game options / settings panel
     "Settings",
     "InterfaceOptions_AddCategory",
-    "InterfaceOptionsFrame_OpenToCategory",
     "GameFontNormalLarge",
     "GameFontHighlightSmall",
     "PlaySound",
@@ -58,6 +57,9 @@ globals = {
     "C_AddOns",
     "C_Timer",
     "C_ClassColor",
+
+    -- Embedded LuaBitOp (bit flag combination for LFGList filters)
+    "bit",
 
     -- ScrollBox (WoW 10.x+ scroll container used by Blizzard_LFGList)
     "BaseScrollBoxEvents",
@@ -81,6 +83,20 @@ globals = {
     "LFGListApplicationDialog",
     "LFGListSearchPanel_SignUp",
     "ToggleLFDParentFrame",
+    "PVEFrame_ToggleFrame",
+
+    -- Premade Groups creation flow (LFGListFrame.EntryCreation) — see GroupCreation.
+    "GROUP_FINDER_CATEGORY_ID_DUNGEONS",
+    "LFGListEntryCreation_Select",
+    "LFGListEntryCreation_SetupGroupDropdown",
+    "LFGListEntryCreation_SetupActivityDropdown",
+    "LFGListEntryCreation_SetupPlayStyleDropdown",
+    "LFGListEntryCreation_UpdateValidState",
+    "LFGListEntryCreationActivityFinder_Show",
+    "MAX_LFG_LIST_GROUP_DROPDOWN_ENTRIES",
+    "LFG_LIST_MORE",
+    "Enum",
+    "hooksecurefunc",
 
     -- Slash command registration
     "SLASH_SMARTLFG1",
