@@ -22,9 +22,6 @@
 
 name: Release
 
-env:
-  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
-
 on:
   push:
     tags:
@@ -157,7 +154,7 @@ jobs:
 
       # ── Step: Upload artifact for the release job ─────────────────────────
       - name: Upload build artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: addon-zip
           path: ${{ steps.zip.outputs.zip_path }}
@@ -180,7 +177,7 @@ jobs:
 
       # ── Step: Download the packaged zip ───────────────────────────────────
       - name: Download build artifact
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v7
         with:
           name: addon-zip
           path: dist/
@@ -223,7 +220,7 @@ jobs:
 
       # ── Step: Create the GitHub Release ───────────────────────────────────
       - name: Create Release
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         with:
           tag_name:   ${{ github.ref_name }}
           name:       SmartLFG ${{ github.ref_name }}
