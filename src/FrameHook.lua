@@ -122,11 +122,17 @@ local function HookScrollButtons(scrollFrame)
     for _, btn in ipairs(scrollFrame.buttons) do HookFramePremade(btn) end
 end
 
+-- Hook every visible premade row. `ForEachFrame` covers them on any client that
+-- has it; the GetChildren() walk below is a fallback for ones that don't.
+-- The `elseif` is deliberate: this runs from the ScrollBox's OnLayout callback
+-- (every scroll step, every results update) and `{ target:GetChildren() }`
+-- allocates a fresh table on each call. Running both branches hooked the same
+-- rows twice and made that allocation pure garbage. Do not split it back into
+-- two separate `if`s.
 local function HookScrollBoxChildren(scrollBox)
     if scrollBox.ForEachFrame then
         scrollBox:ForEachFrame(HookFramePremade)
-    end
-    if scrollBox.GetScrollTarget then
+    elseif scrollBox.GetScrollTarget then
         local target = scrollBox:GetScrollTarget()
         if target and target.GetChildren then
             for _, child in ipairs({ target:GetChildren() }) do

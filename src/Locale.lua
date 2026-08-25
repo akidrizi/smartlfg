@@ -12,6 +12,12 @@ local _, SmartLFG = ...
 -- English (enUS / default) — every key must be defined here
 -- ---------------------------------------------------------------------------
 local L_enUS = {
+    -- Skinning diagnostics (Skin.GetProvider). _STATUS' first %s is the
+    -- provider that skinned the dialog, the second every skinner loaded.
+    ABOUT_VERSION        = "Version %s  - authored by %s",
+    SKIN_STATUS          = "Skin applied from %s  |  Loaded skins: %s",
+    SKIN_PENDING         = "not ready yet",
+    SKIN_NONE            = "nothing",
     -- Startup
     WELCOME              = "v%s  -  /slfg",
 
@@ -83,6 +89,10 @@ local L_enUS = {
 -- German (deDE)
 -- ---------------------------------------------------------------------------
 local L_deDE = setmetatable({
+    ABOUT_VERSION        = "Version %s  - erstellt von %s",
+    SKIN_STATUS          = "Skin von %s  |  Geladene Skins: %s",
+    SKIN_PENDING         = "noch nicht bereit",
+    SKIN_NONE            = "nichts",
     NO_SIGNUP_BTN        = "Anmelde-Schaltfläche nicht gefunden.",
     CONFLICT_TITLE       = "Addon-Konflikt",
     CONFLICT_DETECTED    = "Anmeldung fehlgeschlagen. Ein anderes Addon, das Premade-Gruppen oder LFG verwaltet, könnte stören. "
@@ -124,6 +134,10 @@ local L_deDE = setmetatable({
 -- French (frFR)
 -- ---------------------------------------------------------------------------
 local L_frFR = setmetatable({
+    ABOUT_VERSION        = "Version %s  - créé par %s",
+    SKIN_STATUS          = "Habillage appliqué depuis %s  |  Habillages chargés : %s",
+    SKIN_PENDING         = "pas encore prêt",
+    SKIN_NONE            = "aucun",
     NO_SIGNUP_BTN        = "Bouton d'inscription introuvable.",
     CONFLICT_TITLE       = "Conflit d'add-on",
     CONFLICT_DETECTED    = "Impossible de s'inscrire. Un autre add-on qui gère les groupes Premade ou le LFG peut interférer. "
@@ -165,6 +179,10 @@ local L_frFR = setmetatable({
 -- Spanish (esES / esMX)
 -- ---------------------------------------------------------------------------
 local L_esES = setmetatable({
+    ABOUT_VERSION        = "Versión %s  - creado por %s",
+    SKIN_STATUS          = "Aspecto aplicado desde %s  |  Aspectos cargados: %s",
+    SKIN_PENDING         = "aún no está listo",
+    SKIN_NONE            = "ninguno",
     NO_SIGNUP_BTN        = "No se encontró el botón de registro.",
     CONFLICT_TITLE       = "Conflicto de complemento",
     CONFLICT_DETECTED    = "No se pudo registrar. Otro complemento que gestiona grupos Premade o LFG puede estar interfiriendo. "
@@ -208,6 +226,10 @@ local L_esES = setmetatable({
 -- Russian (ruRU)
 -- ---------------------------------------------------------------------------
 local L_ruRU = setmetatable({
+    ABOUT_VERSION        = "Версия %s  - автор: %s",
+    SKIN_STATUS          = "Оформление от %s  |  Загруженные оформления: %s",
+    SKIN_PENDING         = "ещё не готово",
+    SKIN_NONE            = "нет",
     NO_SIGNUP_BTN        = "Кнопка записи не найдена.",
     CONFLICT_TITLE       = "Конфликт аддонов",
     CONFLICT_DETECTED    = "Не удалось записаться. Другой аддон, управляющий группами Premade или LFG, может мешать. Попробуйте отключить эти аддоны, затем введите /reload.",
@@ -250,6 +272,10 @@ local L_ruRU = setmetatable({
 -- Portuguese Brazil (ptBR)
 -- ---------------------------------------------------------------------------
 local L_ptBR = setmetatable({
+    ABOUT_VERSION        = "Versão %s  - criado por %s",
+    SKIN_STATUS          = "Visual aplicado de %s  |  Visuais carregados: %s",
+    SKIN_PENDING         = "ainda não pronto",
+    SKIN_NONE            = "nenhum",
     NO_SIGNUP_BTN        = "Botão de inscrição não encontrado.",
     CONFLICT_TITLE       = "Conflito de addon",
     CONFLICT_DETECTED    = "Não foi possível se inscrever. Outro addon que gerencia grupos Premade ou LFG pode estar interferindo. Tente desativar esses addons e depois use /reload.",
@@ -292,6 +318,10 @@ local L_ptBR = setmetatable({
 -- Italian (itIT)
 -- ---------------------------------------------------------------------------
 local L_itIT = setmetatable({
+    ABOUT_VERSION        = "Versione %s  - creato da %s",
+    SKIN_STATUS          = "Grafica applicata da %s  |  Grafiche caricate: %s",
+    SKIN_PENDING         = "non ancora pronto",
+    SKIN_NONE            = "nessuno",
     NO_SIGNUP_BTN        = "Pulsante di iscrizione non trovato.",
     CONFLICT_TITLE       = "Conflitto tra addon",
     CONFLICT_DETECTED    = "Impossibile iscriversi. Un altro addon che gestisce i gruppi Premade o LFG potrebbe interferire. "

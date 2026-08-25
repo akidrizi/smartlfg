@@ -10,6 +10,11 @@ SmartLFG.COLOR = {
     RESET   = "|r",
 }
 
+-- Shown in the diagnostic report (Skin.GetProvider). Display text only: WoW's
+-- chat renders neither markdown nor clickable external links, so this prints as
+-- plain text and is deliberately scheme-less to stay readable.
+SmartLFG.AUTHOR_URL = "github.com/akidrizi"
+
 -- Role identity. We use Blizzard's modern role tokens ("TANK", "HEALER",
 -- "DAMAGER") so the values line up with GetSpecializationRole. Order here
 -- drives the options-panel role row.

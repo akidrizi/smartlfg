@@ -1,6 +1,14 @@
 SmartLFG Changelog
 ==================
 
+2.3.0
+-----
+- New: the /slfg dialog now follows your UI skin — window border and background included, along with the close button and the option checkboxes. EllesmereUI, ElvUI, AddOnSkins and Aurora are all recognised automatically — with none of them installed, nothing changes and the dialog keeps Blizzard's stock look.
+- Skinning is strictly optional: SmartLFG never depends on those addons, and if one of them fails or is still loading, the dialog keeps its normal look rather than breaking.
+- EllesmereUI users control this from EUI's own options, per addon, like any other skinned addon.
+- Only one skinning addon ever styles the window, so two of them can never fight over it. Double-click the version number in `/slfg` (or run `/run SmartLFG.Skin.GetProvider()`) to see which one picked it up and which are loaded.
+- Fix: browsing Premade Groups churned far more temporary memory than it should have — every scroll processed the visible group list twice. Only the memory reported against SmartLFG was affected, never your settings or sign-ups.
+
 2.2.0
 -----
 - New option: Enhanced Premade Groups (on by default, toggle in /slfg) — makes starting a Dungeons premade group quicker. Applies to Dungeons only; every other Premade category is left untouched.

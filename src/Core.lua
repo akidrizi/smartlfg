@@ -1,5 +1,12 @@
 local addonName, SmartLFG = ...
 
+-- The addon table is normally passed file-to-file through the `...` vararg and
+-- is deliberately not global. This one export exists so the runtime state can be
+-- inspected from a /run macro for support — e.g. which skinning addon claimed
+-- the dialog:
+--     /run SmartLFG.Skin.GetProvider()
+_G.SmartLFG = SmartLFG
+
 local frame = CreateFrame("Frame", "SmartLFGCoreFrame", UIParent)
 
 -- Set once our own ADDON_LOADED has run (DB + UI ready), so the frame-hooking
@@ -18,6 +25,7 @@ frame:SetScript("OnEvent", function(_, event, ...)
             SmartLFG.DB.Init()
             SmartLFG.Options.Register()
             SmartLFG.Minimap.Create()
+            SmartLFG.Skin.Init()
             SmartLFG.Print(string.format(SmartLFG.L.WELCOME, SmartLFG.GetAddonVersion()))
             ready = true
         end

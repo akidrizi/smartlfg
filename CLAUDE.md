@@ -98,11 +98,13 @@ spec role), sign-up warns `ROLE_REQUIRED`.
 
 Shared table `SmartLFG` is passed to every file via the `...` vararg (`local _, SmartLFG
 = ...`, or `local addonName, SmartLFG = ...` where the name is needed). It is the same
-object in every file. `SavedVariablesPerCharacter: SmartLFGDB`.
+object in every file. `Core.lua` also exports it as `_G.SmartLFG` — the one deliberate
+global — purely so runtime state can be inspected from a `/run` macro for support; the
+vararg stays the way files reach it. `SavedVariablesPerCharacter: SmartLFGDB`.
 
 ### Load order (alphabetical within `src\`, declared in the `.toc`)
 
-`Commands → Constants → Core → Database → FrameHook → GroupCreation → Locale → Minimap → Options → RoleManager → Util`
+`Commands → Constants → Core → Database → FrameHook → GroupCreation → Locale → Minimap → Options → RoleManager → Skin → Util`
 
 Safe because **no file calls another module's functions at load time** — all
 cross-module calls happen inside function bodies, which run only after every file loads.
@@ -111,15 +113,16 @@ cross-module calls happen inside function bodies, which run only after every fil
 
 | File | Responsibility |
 |---|---|
-| `Constants.lua` | UI color codes (`SmartLFG.COLOR`), role tokens (`SmartLFG.ROLES`), native role-icon atlases (`SmartLFG.ROLE_ATLAS`, the Group Finder role badges). |
+| `Constants.lua` | UI color codes (`SmartLFG.COLOR`), the author URL shown in the diagnostic report (`SmartLFG.AUTHOR_URL`; display text only — WoW chat renders neither markdown nor clickable links), role tokens (`SmartLFG.ROLES`), native role-icon atlases (`SmartLFG.ROLE_ATLAS`, the Group Finder role badges). |
 | `Locale.lua` | All user-visible strings (`SmartLFG.L`). `L_enUS` is the authoritative base; `deDE/frFR/esES/ruRU/ptBR/itIT` metatable-fallback to it (`esMX`→`esES`). |
 | `Database.lua` | `SmartLFGDB` access via `DB.Get`/`DB.Set` only. Per-character. `SCHEMA_VERSION = 12`; keys are `enabled`, `quickSignUp`, `autoAccept`, `roleInitialized`, `minimapAngle`, `selectedRoles`, `enhancedListing` (+ `schemaVersion`). v12 renamed `rememberDungeonListing` → `enhancedListing`, carrying the player's on/off choice over, and dropped `dungeonListing`. |
 | `Util.lua` | Stateless helpers: `Print`, `Warn`, `GetAddonVersion`, and the role model (`GetAvailableRoles`, `GetNativeRoles`, `GetSelectedRoles`, `GetCurrentSpecRole`, `GetCurrentSpecName`, `ToggleRole`, `ResolveSignUpRoles`, `ApplyResolvedRoles`, `GetRoleName`), plus `IsPlayerSoloOrLeader`. |
 | `Minimap.lua` | Native, hand-rolled minimap button (no libraries; icon `media/minimap_64.png`, circular-masked). `M.Create()` builds it once; left-click calls `Options.Toggle()`, right-click flips the `enabled` DB key (mirrors `/slfg on\|off`, with chat feedback) and refreshes the tooltip, drag repositions it (angle saved in the `minimapAngle` DB key). The tooltip (`ShowTooltip`) shows the drag/open hint plus a right-click line that flips green "Enable" / red "Disable" with the current state. `UpdatePosition` clamps the button to the minimap edge using `GetMinimapShape()` + a `MINIMAP_SHAPES` quadrant table, so it follows round/square/cornered minimaps (the LibDBIcon approach, library-free). |
-| `Options.lua` | The standalone options dialog (movable `BackdropTemplate` frame, dark backdrop, close X, ESC-closable). Header (branded `media/minimap_64.png` icon + name/version + Enable; the header icon is a button that opens Group Finder → Premade Groups via `PVEFrame_ToggleFrame("GroupFinderFrame", "LFGListPVEStub")`, falling back to `ToggleLFDParentFrame` — an easter egg), a SIGN-UP ROLES section (its header carries a turn-in icon — `GossipFrame\ActiveQuestIcon` — whose hover tooltip names the spec-role fallback) of three circular role buttons with labels, an OPTIONS section (its header carries a native quest icon — `GossipFrame\AvailableQuestIcon` — whose hover tooltip, `CONFLICT_INFO_*`, explains the per-option conflict triangles) with three toggles: Double-click sign-up and Auto-accept role sit inline as one centred row (each reserves a status-icon slot after its label — `OPT_ICON`/`OPT_ICON_GAP`, plus `TOGGLE_GAP` between them — so the row stays symmetric; the Double-click sign-up toggle carries a `services-icon-warning` triangle, hidden until the conflict self-check fires, whose tooltip repeats `CONFLICT_DETECTED`; the auto-accept slot is reserved for a future indicator), and Enhanced Premade Groups centred on its own row (`OPT_Y2`) beneath them — its tooltip formats `OPTIONS_ENHANCED_DESC` with the addon-cyan `OPTIONS_ENHANCED_MYTHIC`/`_COMPETITIVE` terms — and a bottom Tip line; help text is hover-tooltip only. Also builds the tiny Settings → AddOns stub that opens the dialog. `O.Register()`, `O.Open()`, `O.Toggle()`, `O.Refresh()` (which also calls `GroupCreation.Refresh()` so the toggle applies live); `CreateCheck` builds one DB-bound checkbox (label + tooltip), `CreateRoleButton` builds one ringed role icon, `CreateSectionHeader`/`WireTooltip` are layout helpers. |
+| `Options.lua` | The standalone options dialog (movable `BackdropTemplate` frame, dark backdrop, close X, ESC-closable). Header (branded `media/minimap_64.png` icon + name/version + Enable; the header icon is a button that opens Group Finder → Premade Groups via `PVEFrame_ToggleFrame("GroupFinderFrame", "LFGListPVEStub")`, falling back to `ToggleLFDParentFrame` — an easter egg), a SIGN-UP ROLES section (its header carries a turn-in icon — `GossipFrame\ActiveQuestIcon` — whose hover tooltip names the spec-role fallback) of three circular role buttons with labels, an OPTIONS section (its header carries a native quest icon — `GossipFrame\AvailableQuestIcon` — whose hover tooltip, `CONFLICT_INFO_*`, explains the per-option conflict triangles) with three toggles: Double-click sign-up and Auto-accept role sit inline as one centred row (each reserves a status-icon slot after its label — `OPT_ICON`/`OPT_ICON_GAP`, plus `TOGGLE_GAP` between them — so the row stays symmetric; the Double-click sign-up toggle carries a `services-icon-warning` triangle, hidden until the conflict self-check fires, whose tooltip repeats `CONFLICT_DETECTED`; the auto-accept slot is reserved for a future indicator), and Enhanced Premade Groups centred on its own row (`OPT_Y2`) beneath them — its tooltip formats `OPTIONS_ENHANCED_DESC` with the addon-cyan `OPTIONS_ENHANCED_MYTHIC`/`_COMPETITIVE` terms — and a bottom Tip line; help text is hover-tooltip only. Also builds the tiny Settings → AddOns stub that opens the dialog. Double-clicking the version line calls `Skin.GetProvider()` (an invisible `Button` over the FontString, which cannot take clicks itself) — an undiscoverable support diagnostic, so no tooltip and no label. `O.Register()`, `O.Open()`, `O.Toggle()`, `O.Refresh()` (which also calls `GroupCreation.Refresh()` so the toggle applies live); `ApplyStockBackdrop` paints the dialog's stock Blizzard backdrop and doubles as `Skin`'s rollback, `ApplyTipDiamond` draws the tip-line diamond and doubles as `Skin`'s redecorate hook; `CreateCheck` builds one DB-bound checkbox (label + tooltip), `CreateRoleButton` builds one ringed role icon, `CreateSectionHeader`/`WireTooltip` are layout helpers. |
 | `RoleManager.lua` | Behaviors: `ApplyToGroup` (premade sign-up; resolves + applies roles first, then arms the conflict self-check), `SignUp` (LFD queue — legacy), `AutoAcceptRoleCheck` (gated by the `autoAccept` DB key), `PreselectRoleFromSpec` (first-run seeding of `selectedRoles`), the session note (`GetNote`/`SetNote`) + note mode for Shift, and the conflict self-check (`NotifyDialogShown` from the application dialog's OnShow, `HasConflict` read by Options). |
 | `GroupCreation.lua` | The Dungeons "Start a Group" behaviors, all gated by one `IsEnhanced()` check (`enabled` + `enhancedListing`), re-read on every entry point so the toggle is live: `GC.OnEntryCreationShow` pre-selects Mythic+ (`activityInfo.isMythicPlusActivity`) and a Competitive playstyle, deferred one frame and retrying while the activity list is still empty; `GC.OnSelect` re-asserts Mythic+ on dungeon change; `GC.OnSetupGroupDropdown` trims the dungeon dropdown to the current M+ season; `GC.Refresh` re-applies both to an already-open form when the option changes. **Never writes the Title** — that is Blizzard's. Every undocumented-internal call goes through `SafeCall` (existence-checked + `pcall`-guarded). All activity changes funnel through `SelectActivity`, and playstyle is a direct `generalPlaystyle` field write — both to minimize trips through the protected `SetEntryTitle` (see **Taint**). |
-| `FrameHook.lua` | Hooks the LFG UI: premade row double-click + tooltip + application-dialog auto-submit (all gated by the `quickSignUp` DB key), note hold-open / deferred note restore, the LFD dungeon-list double-click, and wires `LFGListFrame.EntryCreation`'s `OnShow` + its `ListGroupButton`'s `OnClick` to `GroupCreation`. |
+| `FrameHook.lua` | Hooks the LFG UI: premade row double-click + tooltip + application-dialog auto-submit (all gated by the `quickSignUp` DB key), note hold-open / deferred note restore, the LFD dungeon-list double-click, and wires `LFGListFrame.EntryCreation`'s `OnShow` + its `ListGroupButton`'s `OnClick` to `GroupCreation`. Premade rows are re-hooked from the ScrollBox's `OnLayout` callback, which fires on **every** scroll step and results update — so `HookScrollBoxChildren` must stay allocation-free on modern clients: `ForEachFrame` and the `GetScrollTarget`/`GetChildren` walk are an `if`/**`elseif`**, never two `if`s. Both branches hook the same rows, and the fallback's `{ target:GetChildren() }` allocates a table per call — running it unconditionally churned megabytes of garbage per minute of browsing. |
+| `Skin.lua` | Optional, dependency-free integration with UI-skinning addons, covering only the dialog's close button and option checkboxes (custom role art and the branded header are left alone). Widgets are handed over at build time via `Skin.AddCloseButton`/`AddCheckBox`/`AddPanel` (the last with a restore callback); skinning happens later. Two models: **push** — `Skin.Init()` (ADDON_LOADED) calls `EllesmereUI.RegisterSkin`, and EUI invokes our callback on its own schedule, subject to its per-addon user opt-in; **pull** — `Skin.Apply()` (first `O.Open`, not build time) drives ElvUI / AddOnSkins / Aurora ourselves. See **Skinning** below. |
 | `Commands.lua` | `/slfg` (opens the dialog) and `/slfg on\|off`. |
 | `Core.lua` | Entry point: registers events, holds the enabled-gate, calls `Options.Register()` and `Minimap.Create()`, and retries the LFG frame hooks on every `ADDON_LOADED` (never matching a Blizzard addon name — see **Never match Blizzard addon names**). |
 
@@ -127,7 +130,7 @@ cross-module calls happen inside function bodies, which run only after every fil
 
 | Event | Gate | Handler |
 |---|---|---|
-| `ADDON_LOADED` | always | Init DB + options dialog + minimap button (own addon only); then, on **every** `ADDON_LOADED`, retry `FrameHook.HookLFGList()` + `HookLFD()` — see **Never match Blizzard addon names** below. |
+| `ADDON_LOADED` | always | Init DB + options dialog + minimap button + `Skin.Init()` (own addon only); then, on **every** `ADDON_LOADED`, retry `FrameHook.HookLFGList()` + `HookLFD()` — see **Never match Blizzard addon names** below. |
 | `PLAYER_LOGIN` | always | `RoleManager.PreselectRoleFromSpec()` — first-run role seeding (spec data is ready by now). |
 | `LFG_LIST_SEARCH_RESULTS_RECEIVED` | always | Re-hook recycled premade ScrollBox rows. |
 | `LFG_ROLE_CHECK_SHOW` | enabled | `RoleManager.AutoAcceptRoleCheck()` (no-ops unless the `autoAccept` key is set). |
@@ -279,6 +282,115 @@ build degrades that one effect silently instead of aborting the rest of
 
 ---
 
+## Skinning (optional, never a dependency)
+
+`Skin.lua` lets UI-skinning addons restyle the dialog. Nothing runs unless the
+skinning addon is actually installed; every call into foreign code is
+`pcall`-guarded; a failure leaves Blizzard's stock look. Three things are handed
+over — the **dialog frame** (backdrop + border), the **close button**, and the
+**option checkboxes**. Role icons and the branded header are custom art and are
+deliberately never skinned.
+
+**Timing is the whole problem, and the two models solve it differently.**
+
+- **Push — EllesmereUI.** `Skin.Init()` calls `EllesmereUI.RegisterSkin("SmartLFG", fn)`
+  at `ADDON_LOADED`; EUI invokes `fn(S)` at `PLAYER_LOGIN` (or immediately when
+  registered later), **only if the user enabled skinning for SmartLFG in EUI's
+  options**, and isolates any error the callback raises. So there is no readiness
+  probe on this path — registering is enough. `SmartLFG.toc` carries
+  `## OptionalDeps: EllesmereUI` because EUI's API requires it to load first.
+  Its primitives (`S.CloseButton`, `S.Checkbox`, …) are documented idempotent.
+- **Pull — ElvUI / AddOnSkins / Aurora.** We call them, so we own the timing.
+  `Skin.Apply()` runs from `O.Open()` — **not** from `BuildPanel()`, which runs at
+  `ADDON_LOADED` before any skinner has initialized. It retries on a later open if
+  the provider was not ready, and latches once one has applied.
+
+**Never call ElvUI's `HandleCheckBox` before `S.Initialized`.** It calls
+`StripTextures()` on the widget *before* reading its own saved settings, so an
+early call raises partway through and leaves an **invisible checkbox**. `pcall`
+stops the error but cannot undo the strip — "not ready" must mean "don't touch
+it", never "try anyway". `ElvUISkins()` exists solely to enforce that.
+
+**Exactly one provider may ever touch a widget.** They do not recognise each
+other's work — ElvUI marks a finished widget `IsSkinned`, AddOnSkins marks it
+`isSkinned`, and neither reads the other's flag — so two of them running would
+stack a second backdrop rather than no-op. Hence: the first provider whose global
+exists claims the job outright, and a provider that is merely *not ready yet*
+still blocks the ones below it instead of falling through. The pass simply does
+nothing and the next `O.Open()` retries.
+
+**Every pull provider needs its own readiness gate, for the same reason.**
+ElvUI's `HandleCheckBox` strips before reading `S.db`; AddOnSkins' *own* handler
+(it is a standalone skinner with its own `AS.Skins` module and profile — it does
+**not** route into ElvUI) strips before reading `AS.db` via `AS:CheckOption`.
+Both leave an unrecoverable half-stripped widget if called early, so
+`ApplyAddOnSkins` gates on `AS.db`/`AS.Skins` exactly as `ElvUISkins` gates on
+`S.Initialized`.
+
+**No skinner reaches our dialog on its own.** They restyle Blizzard frames and
+addons they explicitly support; SmartLFG is in neither list. The dialog is
+skinned exactly when `Skin.lua` asks for it, which is what makes "one provider,
+once" enforceable at all.
+
+**The panel skin can roll back; widget skins cannot.** Every provider strips the
+frame before painting its own template, so one that fails in between leaves an
+invisible window. `Options.ApplyStockBackdrop` is factored out of `BuildPanel`
+precisely so it can be handed to `Skin.AddPanel` as a restore callback:
+`SkinPanels` pcalls the provider and re-applies our backdrop on failure. A
+half-stripped *checkbox* has no equivalent recovery — which is why the ElvUI
+readiness check above matters so much more than it looks.
+
+**Never use the frame handlers that strip.** ElvUI's `S:HandleFrame` and
+AddOnSkins' `AS:SkinFrame` both call `StripTextures()` before applying their
+template. That exists to clear *Blizzard's* frame art — but our panel is our own
+construction, so the only regions it can strip are ours. It ate `tipDiamond` (the
+gold diamond on the tip line, a bare texture parented to the panel). Use the
+backdrop-only calls instead: `frame:SetTemplate()` (ElvUI — injected into the
+frame metatable, so load order is irrelevant) and `AS:SetTemplate` (AddOnSkins).
+Aurora's `Base.SetBackdrop` never stripped. EUI's `S.Shell` is documented as
+*fading* existing art, which would do the same damage by another route — hence
+`redecorate`.
+
+`Skin.AddPanel(frame, restore, redecorate)` takes two callbacks: `restore`
+(`Options.ApplyStockBackdrop`) runs only on failure; `redecorate`
+(`Options.ApplyTipDiamond`) runs after every success, re-asserting our own artwork
+in case the provider faded it. **Anything drawn directly on `panel` must be
+re-applied there** — every other texture in the dialog is parented to a child
+frame and is therefore out of reach.
+
+**Aurora exports a hash table, not an array.** `_G.Aurora` is
+`{ Base, Hook, Skin, Color, Util }` (`Skin/init.lua`). The pre-11.x public API was
+`{ F, C }`, so `unpack(_G.Aurora)` now yields nothing and any integration copied
+from an old snippet fails *silently* — no error, nothing skinned. Aurora names its
+widget skins after the Blizzard template they restyle
+(`Skin.UIPanelCloseButton`, `Skin.UICheckButtonTemplate`), which happens to match
+the templates our widgets already use. Its colors come from `AuroraConfig`, so
+that global doubles as the readiness gate.
+
+`Skin.GetProvider()` prints a two-line report — `ABOUT_VERSION` (addon version from
+`Util.GetAddonVersion`, plus `SmartLFG.AUTHOR_URL`) then `SKIN_STATUS` — and returns **two** values — the provider that claimed
+(`"none"` / `"pending"` when none has), and a list of every skinner detected as
+loaded. It also **prints** a localized one-liner itself (`SKIN_STATUS`/`SKIN_PENDING`/
+`SKIN_NONE`), so the macro is just `/run SmartLFG.Skin.GetProvider()`. The printed text
+is localized; the return values stay stable English tokens (`"none"`, `"pending"`, or an
+addon name) so callers can compare them in code.
+
+Double-clicking the dialog's version line calls it too, for players who will not type a
+macro.
+ The two are separate because
+the confusing failures all live in the gap between them: *installed* is not
+*loaded* (an out-of-date `## Interface:` keeps a skinner out of `_G` entirely),
+and *loaded* is not *claimed* (only one provider ever wins). It calls
+`Skin.Apply()` itself, so it answers truthfully even before the dialog has been
+opened — without that, a query on a fresh login always reports nothing, since
+`Apply` otherwise runs only from `O.Open()`.
+
+`CreateCheck` widens each checkbox's hit rect across its label so clicking the
+text toggles it. Skinners may reset that, so `RestoreCheckBoxHitRect` re-asserts
+it after every skin call.
+
+---
+
 ## Conventions
 
 - **Namespace:** every public symbol under `SmartLFG.*`. `local function` = file-private;
@@ -351,6 +463,18 @@ build degrades that one effect silently instead of aborting the rest of
   order for `LFG_ROLE_CHECK_SHOW` isn't guaranteed, so we may fire before Blizzard lays
   it out — clicks it, and stops once it's been seen and is gone. Role checks always
   complete server-side (no stacking).
+- **Skinning support is verified unevenly.** ElvUI and AddOnSkins were read
+  line-by-line from installed copies, and the ElvUI path is confirmed working
+  in-game (including that `HandleFrame`'s `StripTextures()` ate `tipDiamond`, which
+  is why the panel now uses `SetTemplate`). **AddOnSkins has never actually run**
+  — the installed copy declares `## Interface: 110107` against a 120100 client, so
+  WoW does not load it and `_G.AddOnSkins` never appears. Aurora's provider was
+  rewritten against its real (hash-shaped) export after the first attempt silently
+  did nothing, but has not been re-tested since. EllesmereUI is written purely from
+  its published API — never installed, never executed. `scratchpad/skintest.lua`
+  (not shipped) stubs all four and covers 74 assertions, but a stub only proves the
+  integration is self-consistent, not that the real addon behaves as documented.
+  **Status: ElvUI confirmed; the other three unverified in-game.**
 - **LFD (dungeon-finder) hooking is still present** (`FH.HookLFD`, `RoleManager.SignUp`
   via `LFGTeleport`). The product direction is Premade-only; removing LFD is pending.
 - **Group creation (Dungeons) hooks undocumented Blizzard internals.** Unlike the rest of

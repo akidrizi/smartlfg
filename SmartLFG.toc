@@ -3,9 +3,10 @@
 ## Author: Akis Idrizi
 ## IconTexture: Interface\Addons\SmartLFG\media\icon
 ## Notes: Auto-accept Group Finder role check and double-click to sign-up.
-## Version: 2.2.0
+## Version: 2.3.0
 ## X-Curse-Project-ID: 1494840
 ## X-Wago-ID: RNLkrYGo
+## OptionalDeps: EllesmereUI
 ## SavedVariablesPerCharacter: SmartLFGDB
 ## Category: Dungeons & Raids
 ## Category-deDE: Dungeons & Schlachtzüge
@@ -27,4 +28,5 @@ src\Locale.lua
 src\Minimap.lua
 src\Options.lua
 src\RoleManager.lua
+src\Skin.lua
 src\Util.lua

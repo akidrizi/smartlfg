@@ -76,6 +76,7 @@ local function CreateCheck(parent, name, dbKey, labelText, tipTitle, tipText)
         O.Refresh()
     end)
     WireTooltip(check, tipTitle, tipText)
+    SmartLFG.Skin.AddCheckBox(check)
 
     return check, label
 end
@@ -134,6 +135,33 @@ local function CreateRoleButton(parent, role)
 end
 
 -- ── Build the dialog once ───────────────────────────────────────────────────
+-- The dialog's stock Blizzard look. Kept as a standalone function because Skin
+-- hands it to the skinning providers as a rollback: a skinner that fails partway
+-- through restyling the panel leaves it with no backdrop at all, and unlike a
+-- stripped checkbox this is something we can put back exactly as it was.
+-- The small gold diamond in front of the tip line. Factored out for the same
+-- reason as ApplyStockBackdrop below: it is a plain texture parented straight to
+-- the panel, so any skinner that strips or fades the panel's regions takes it
+-- with them. Skin re-runs this after a successful panel skin.
+local function ApplyTipDiamond()
+    if not tipDiamond then return end
+    tipDiamond:SetColorTexture(1, 1, 1)
+    tipDiamond:SetSize(7, 7)
+    tipDiamond:SetRotation(math.rad(45))  -- a rotated square reads as a diamond
+    tipDiamond:SetAlpha(1)
+    tipDiamond:Show()
+end
+
+local function ApplyStockBackdrop(f)
+    f:SetBackdrop({
+        bgFile   = "Interface\\DialogFrame\\UI-DialogBox-Background-Dark",
+        edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border",  -- plain, no corner ornaments
+        tile = true, tileSize = 16, edgeSize = 16,
+        insets = { left = 4, right = 4, top = 4, bottom = 4 },
+    })
+    f:SetBackdropColor(1, 1, 1, 0.75)  -- ~25% more transparent than opaque
+end
+
 local function BuildPanel()
     local C, L = SmartLFG.COLOR, SmartLFG.L
 
@@ -146,13 +174,7 @@ local function BuildPanel()
     panel:SetToplevel(true)
     panel:SetClampedToScreen(true)
     panel:Hide()
-    panel:SetBackdrop({
-        bgFile   = "Interface\\DialogFrame\\UI-DialogBox-Background-Dark",
-        edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border",  -- plain, no corner ornaments
-        tile = true, tileSize = 16, edgeSize = 16,
-        insets = { left = 4, right = 4, top = 4, bottom = 4 },
-    })
-    panel:SetBackdropColor(1, 1, 1, 0.75)  -- ~25% more transparent than opaque
+    ApplyStockBackdrop(panel)
 
     -- Drag the window by grabbing anywhere on it.
     panel:SetMovable(true)
@@ -164,9 +186,12 @@ local function BuildPanel()
     -- ESC closes the dialog like any other Blizzard window.
     table.insert(UISpecialFrames, "SmartLFGDialog")
 
+    SmartLFG.Skin.AddPanel(panel, ApplyStockBackdrop, ApplyTipDiamond)
+
     local close = CreateFrame("Button", nil, panel, "UIPanelCloseButton")
     close:SetSize(22, 22)
     close:SetPoint("TOPRIGHT", -5, -5)
+    SmartLFG.Skin.AddCloseButton(close)
 
     -- Header: branded icon + name, with version beneath the name (top-left).
     -- Easter egg: the icon is a button — clicking it toggles the Group Finder,
@@ -202,6 +227,17 @@ local function BuildPanel()
     version:SetPoint("TOPLEFT", title, "BOTTOMLEFT", 0, -4)
     version:SetText(string.format(L.OPTIONS_VERSION, SmartLFG.GetAddonVersion()))
     version:SetTextColor(0.6, 0.6, 0.6)
+
+    -- Double-clicking the version line reports which skinning addon styled this
+    -- dialog. A FontString can't take clicks, so an invisible button sits over
+    -- it — same trick as the header logo. Kept undiscoverable on purpose: it is
+    -- a support diagnostic, not a feature, so it gets no tooltip and no label.
+    local versionButton = CreateFrame("Button", nil, panel)
+    versionButton:SetAllPoints(version)
+    versionButton:RegisterForClicks("AnyUp")   -- as FrameHook does for OnDoubleClick
+    versionButton:SetScript("OnDoubleClick", function()
+        SmartLFG.Skin.GetProvider()
+    end)
 
     -- Master enable switch on the version row, top-right: "[ ] Enable".
     -- The chat commands in the tooltip are highlighted in the addon's cyan.
@@ -323,10 +359,8 @@ local function BuildPanel()
     noteTip:SetText(string.format(L.OPTIONS_TIP, L.OPTIONS_TIP_NOTE))
 
     tipDiamond = panel:CreateTexture(nil, "ARTWORK")
-    tipDiamond:SetColorTexture(1, 1, 1)
-    tipDiamond:SetSize(7, 7)
-    tipDiamond:SetRotation(math.rad(45))  -- a rotated square reads as a diamond
     tipDiamond:SetPoint("RIGHT", noteTip, "LEFT", -5, 0)
+    ApplyTipDiamond()
 
     panel:SetScript("OnShow", O.Refresh)
 end
@@ -445,6 +479,10 @@ end
 -- ── Open / toggle the dialog (target of bare /slfg and the minimap button) ───
 function O.Open()
     if not panel then return end
+    -- Deferred to first open: every skinning addon has initialized by now,
+    -- which is not true when the panel is built during ADDON_LOADED. No-ops
+    -- when none is installed, and when EllesmereUI drives the skinning.
+    SmartLFG.Skin.Apply()
     panel:Show()
     panel:Raise()
     O.Refresh()
