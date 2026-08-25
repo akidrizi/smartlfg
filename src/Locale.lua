@@ -14,7 +14,7 @@ local _, SmartLFG = ...
 local L_enUS = {
     -- Skinning diagnostics (Skin.GetProvider). _STATUS' first %s is the
     -- provider that skinned the dialog, the second every skinner loaded.
-    ABOUT_VERSION        = "Version %s  - authored by %s",
+    ABOUT_VERSION        = "v%s by %s",
     SKIN_STATUS          = "Skin applied from %s  |  Loaded skins: %s",
     SKIN_PENDING         = "not ready yet",
     SKIN_NONE            = "nothing",
@@ -89,7 +89,7 @@ local L_enUS = {
 -- German (deDE)
 -- ---------------------------------------------------------------------------
 local L_deDE = setmetatable({
-    ABOUT_VERSION        = "Version %s  - erstellt von %s",
+    ABOUT_VERSION        = "v%s von %s",
     SKIN_STATUS          = "Skin von %s  |  Geladene Skins: %s",
     SKIN_PENDING         = "noch nicht bereit",
     SKIN_NONE            = "nichts",
@@ -134,7 +134,7 @@ local L_deDE = setmetatable({
 -- French (frFR)
 -- ---------------------------------------------------------------------------
 local L_frFR = setmetatable({
-    ABOUT_VERSION        = "Version %s  - créé par %s",
+    ABOUT_VERSION        = "v%s par %s",
     SKIN_STATUS          = "Habillage appliqué depuis %s  |  Habillages chargés : %s",
     SKIN_PENDING         = "pas encore prêt",
     SKIN_NONE            = "aucun",
@@ -179,7 +179,7 @@ local L_frFR = setmetatable({
 -- Spanish (esES / esMX)
 -- ---------------------------------------------------------------------------
 local L_esES = setmetatable({
-    ABOUT_VERSION        = "Versión %s  - creado por %s",
+    ABOUT_VERSION        = "v%s por %s",
     SKIN_STATUS          = "Aspecto aplicado desde %s  |  Aspectos cargados: %s",
     SKIN_PENDING         = "aún no está listo",
     SKIN_NONE            = "ninguno",
@@ -226,7 +226,7 @@ local L_esES = setmetatable({
 -- Russian (ruRU)
 -- ---------------------------------------------------------------------------
 local L_ruRU = setmetatable({
-    ABOUT_VERSION        = "Версия %s  - автор: %s",
+    ABOUT_VERSION        = "v%s — %s",
     SKIN_STATUS          = "Оформление от %s  |  Загруженные оформления: %s",
     SKIN_PENDING         = "ещё не готово",
     SKIN_NONE            = "нет",
@@ -272,7 +272,7 @@ local L_ruRU = setmetatable({
 -- Portuguese Brazil (ptBR)
 -- ---------------------------------------------------------------------------
 local L_ptBR = setmetatable({
-    ABOUT_VERSION        = "Versão %s  - criado por %s",
+    ABOUT_VERSION        = "v%s por %s",
     SKIN_STATUS          = "Visual aplicado de %s  |  Visuais carregados: %s",
     SKIN_PENDING         = "ainda não pronto",
     SKIN_NONE            = "nenhum",
@@ -318,7 +318,7 @@ local L_ptBR = setmetatable({
 -- Italian (itIT)
 -- ---------------------------------------------------------------------------
 local L_itIT = setmetatable({
-    ABOUT_VERSION        = "Versione %s  - creato da %s",
+    ABOUT_VERSION        = "v%s di %s",
     SKIN_STATUS          = "Grafica applicata da %s  |  Grafiche caricate: %s",
     SKIN_PENDING         = "non ancora pronto",
     SKIN_NONE            = "nessuno",

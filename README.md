@@ -12,9 +12,9 @@ SmartLFG makes applying to groups instant, native, and effortless.
 * **Double-click** any listing to sign up instantly.
 * **Shift + double-click** to open the application and add a note before submitting.
 * **Auto-accept** the role check popup when the leader queues the group.
-* **Conflict detection** — if another add-on hijacks the Premade sign-up, SmartLFG warns you and flags the affected option with a ▲ icon, so you know why it stopped working.
-* **Enhanced Premade Groups:** create premade groups easier and faster.
-* **Skinning support** — the options window follows your UI skin automatically if you use [EllesmereUI](https://github.com/EllesmereGaming/EllesmereUI), ElvUI, AddOnSkins or Aurora. Nothing to configure, no dependency: with none of them installed the window keeps its normal look.
+* **Enhanced Premade Groups:** create premade groups easier and faster with less clicks.
+* **Conflict detection** if another add-on hijacks the Premade sign-up. Mouseover on exclamation mark (`!`) for details.
+* **UI Skin support**: inherit your UI skin automatically whether you use EllesmereUI, ElvUI, AddOnSkins or Aurora. Nothing to configure, no dependency: with none of them installed the window keeps its normal look.
 * Open **Options menu** from the minimap or with the command `/slfg` to: **choose role** & **toggle features**.
 * Multilingual support: 🇬🇧 `English`, 🇩🇪 `German`, 🇫🇷 `French`, 🇪🇸 `Spanish`, 🇷🇺 `Russian`, 🇧🇷 `Portuguese (Brazil)`, 🇮🇹 `Italian`
 
@@ -25,16 +25,15 @@ SmartLFG makes applying to groups instant, native, and effortless.
 | <code>/slfg</code>         | Open the options panel (all help & config here) |
 | <code>/slfg on\|off</code> | Turn the addon on or off                        |
 
-To check which skinning addon SmartLFG picked up (only one can skin the window at a time):
+`/smartlfg` is an alias for `/slfg`.
+
+Check which skinning addon SmartLFG picked up (only one can skin the window at a time):
 
 ```
 /run SmartLFG.Skin.GetProvider()
 ```
 
 Or just **double-click the version number** in the options window — it reports the same thing.
-
-
-`/smartlfg` is an alias for `/slfg`.
 
 ***
 Share any feedback, suggestions or bug reports [Github](https://github.com/akidrizi/smartlfg/issues) | [Curse](https://www.curseforge.com/wow/addons/smartlfg) | [Wago](https://addons.wago.io/addons/smartlfg).
